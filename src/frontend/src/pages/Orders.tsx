@@ -46,7 +46,10 @@ export default function Orders() {
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button data-ocid="orders.add_order.button" className="gap-2">
+            <Button
+              data-ocid="orders.add_order.button"
+              className="gap-2 min-h-[44px]"
+            >
               <PackagePlus className="w-4 h-4" />
               Add Order
             </Button>
@@ -64,20 +67,22 @@ export default function Orders() {
         </Dialog>
       </header>
 
-      {/* Status filter tabs */}
+      {/* Status filter tabs — horizontal scroll on mobile */}
       <Tabs value={status} onValueChange={setStatus} className="mb-6">
-        <TabsList className="bg-muted/60 h-auto p-1 flex flex-wrap gap-1">
-          {STATUSES.map((s) => (
-            <TabsTrigger
-              key={s}
-              value={s}
-              data-ocid="orders.status_filter.tab"
-              className="text-xs tracking-wide data-[state=active]:bg-card data-[state=active]:shadow-xs"
-            >
-              {s}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="bg-muted/60 h-auto p-1 flex flex-nowrap gap-1 w-max min-w-full">
+            {STATUSES.map((s) => (
+              <TabsTrigger
+                key={s}
+                value={s}
+                data-ocid="orders.status_filter.tab"
+                className="text-xs tracking-wide whitespace-nowrap data-[state=active]:bg-card data-[state=active]:shadow-xs"
+              >
+                {s}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
       </Tabs>
 
       {/* Order list */}
@@ -133,19 +138,17 @@ export default function Orders() {
                 </p>
               </div>
 
-              {/* Date */}
-              <div className="shrink-0 text-xs text-muted-foreground">
-                {order.deliveryDate || "—"}
-              </div>
-
-              {/* Price */}
-              <div className="shrink-0 text-sm font-semibold text-foreground">
-                {Number(order.price).toLocaleString()} MKD
-              </div>
-
-              {/* Status */}
-              <div className="shrink-0">
-                <StatusBadge status={order.status} />
+              {/* Date + Price + Status row on mobile */}
+              <div className="flex items-center gap-3 sm:contents">
+                <div className="shrink-0 text-xs text-muted-foreground">
+                  {order.deliveryDate || "—"}
+                </div>
+                <div className="shrink-0 text-sm font-semibold text-foreground">
+                  {Number(order.price).toLocaleString()} MKD
+                </div>
+                <div className="shrink-0">
+                  <StatusBadge status={order.status} />
+                </div>
               </div>
             </div>
           ))}

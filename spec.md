@@ -1,33 +1,26 @@
-# TRUFFLEUR — Phase 2
+# TRUFFLEUR
 
 ## Current State
-Phase 1 is complete. The app has:
-- Dashboard with stats and quick actions (Products/Calendar/Reports shown as disabled "Phase 2" buttons)
-- Clients page with full CRM functionality
-- Orders page with status management
-- Layout with sidebar nav (Dashboard, Clients, Orders)
+The app has a sidebar navigation on desktop (md+) and a top bar on mobile with 7 icons cramped horizontally. Pages use reasonable responsive classes but some grid layouts and dialogs are not optimized for small screens. No bottom navigation exists for mobile.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `/vip` route: VIP Clients page — filtered view of clients with isVip=true, showing VIP badge, total spend, order history, and special notes. Auto-assigns VIP based on total spend threshold (e.g. 50,000 MKD). Allow manually toggling VIP status.
-- `/calendar` route: Calendar/Reminders page — monthly calendar view showing birthdays, anniversaries, scheduled deliveries, and custom reminders. Each day shows colored event dots. Sidebar lists upcoming events within 30 days.
-- `/products` route: Products page — product catalog with name, category (Truffles, Flowers, Gift Boxes, Seasonal), price, cost, and profit calculation. Add/Edit/Delete products. Show profit margin per item.
-- `/reports` route: Reports page — business insights: total revenue, top 5 clients by spend, best-selling products, order status breakdown chart, monthly revenue trend.
+- Bottom navigation bar for mobile (replacing the top icon bar) with the 5 primary items: Dashboard, Clients, Orders, VIP, and a "More" drawer/sheet for Calendar, Products, Reports
+- Mobile-safe dialog/sheet behavior: forms should open in a full-height Sheet on mobile, Dialog on desktop
 
 ### Modify
-- Layout: Add VIP, Calendar, Products, Reports to sidebar nav and mobile nav
-- Dashboard: Enable the 4 quick action buttons (Products, Calendar, Reports) and add a VIP shortcut, removing the "Phase 2" disabled state
-- App.tsx: Register the 4 new routes
+- Layout.tsx: remove top bar icon nav on mobile; add a bottom nav bar with labels + icons for the 5 primary routes; keep the desktop sidebar unchanged
+- Dashboard.tsx: ensure stats grid and quick actions grid are single-column on very small screens where needed
+- Orders.tsx: make status filter tabs scrollable horizontally on mobile
+- Clients.tsx: ensure client detail page back button and action buttons are touch-friendly
+- ClientForm.tsx / OrderForm.tsx: ensure 2-column grids collapse to 1-column on mobile
 
 ### Remove
-- "Phase 2" disabled badges from Dashboard quick action buttons
+- Mobile top bar icon-only navigation (confusing on small screens)
 
 ## Implementation Plan
-1. Create `/src/frontend/src/pages/VipClients.tsx` — pulls clients, filters VIP, shows profiles with spend and actions
-2. Create `/src/frontend/src/pages/CalendarPage.tsx` — monthly grid, event dots, upcoming sidebar, sample reminders seeded from existing client birthdays/anniversaries
-3. Create `/src/frontend/src/pages/Products.tsx` — product list with add/edit/delete, profit calc
-4. Create `/src/frontend/src/pages/Reports.tsx` — charts (BarChart for revenue, PieChart for order status), top clients table, best sellers list
-5. Update `App.tsx` — add 4 routes
-6. Update `Layout.tsx` — add nav links for all 4 pages
-7. Update `Dashboard.tsx` — wire quick action buttons to new routes
+1. Update Layout.tsx: remove old mobile header icon nav, add bottom nav bar with labels, add a "More" sheet for secondary nav items
+2. Update ClientForm.tsx and OrderForm.tsx: change 2-col grid to single column on mobile (grid-cols-1 sm:grid-cols-2)
+3. Update Orders.tsx: add overflow-x-auto to tabs list for mobile
+4. Adjust main content padding to account for bottom nav bar on mobile (add pb-20 or similar)

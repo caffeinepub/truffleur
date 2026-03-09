@@ -73,7 +73,10 @@ export default function Clients() {
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button data-ocid="clients.add_client.button" className="gap-2">
+            <Button
+              data-ocid="clients.add_client.button"
+              className="gap-2 min-h-[44px]"
+            >
               <UserPlus className="w-4 h-4" />
               Add Client
             </Button>
@@ -108,10 +111,11 @@ export default function Clients() {
           pressed={vipOnly}
           onPressedChange={setVipOnly}
           variant="outline"
-          className="gap-2 shrink-0"
+          className="gap-2 shrink-0 min-h-[44px]"
         >
           <Crown className="w-4 h-4" />
-          VIP Only
+          <span className="hidden sm:inline">VIP Only</span>
+          <span className="sm:hidden">VIP</span>
         </Toggle>
       </div>
 
@@ -139,7 +143,7 @@ export default function Clients() {
               key={String(client.id)}
               data-ocid={`clients.item.${idx + 1}`}
               onClick={() => setSelectedClient(client)}
-              className="w-full group flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-card transition-all duration-200 text-left"
+              className="w-full group flex items-center gap-4 py-4 px-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-card transition-all duration-200 text-left min-h-[64px]"
             >
               <div className="w-10 h-10 rounded-full bg-accent/60 flex items-center justify-center shrink-0">
                 <span className="font-display text-sm font-semibold text-primary">
@@ -189,7 +193,7 @@ function ClientDetail({
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 min-h-[44px]"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Clients
@@ -204,7 +208,7 @@ function ClientDetail({
           </span>
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="font-display text-3xl font-semibold text-foreground">
               {client.firstName} {client.lastName}
             </h1>
@@ -234,7 +238,7 @@ function ClientDetail({
           <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">
             Total Spent
           </p>
-          <p className="font-display text-3xl font-semibold text-foreground">
+          <p className="font-display text-2xl font-semibold text-foreground">
             {totalSpent.toLocaleString()} MKD
           </p>
         </div>
@@ -274,7 +278,7 @@ function ClientDetail({
         <Dialog open={addOrderOpen} onOpenChange={setAddOrderOpen}>
           <DialogTrigger asChild>
             <Button
-              className="gap-2"
+              className="gap-2 min-h-[44px]"
               data-ocid="client_detail.add_order.button"
             >
               <ShoppingBag className="w-4 h-4" /> Add Order
@@ -306,7 +310,7 @@ function ClientDetail({
             {orders.map((order) => (
               <div
                 key={String(order.id)}
-                className="flex items-center justify-between p-4 bg-card border border-border/50 rounded-xl"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 bg-card border border-border/50 rounded-xl"
               >
                 <div>
                   <div className="flex items-center gap-2">

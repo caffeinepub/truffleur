@@ -96,7 +96,7 @@ export default function OrderForm({
         </datalist>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Product
@@ -124,7 +124,7 @@ export default function OrderForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Occasion
@@ -179,7 +179,7 @@ export default function OrderForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Price (MKD)
@@ -244,7 +244,7 @@ export default function OrderForm({
         type="submit"
         data-ocid="order_form.submit_button"
         disabled={addOrder.isPending}
-        className="w-full"
+        className="w-full min-h-[44px]"
       >
         {addOrder.isPending ? (
           <>

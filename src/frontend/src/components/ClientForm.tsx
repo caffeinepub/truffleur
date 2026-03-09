@@ -56,7 +56,7 @@ export default function ClientForm({ onSuccess }: ClientFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label
             htmlFor="firstName"
@@ -89,7 +89,7 @@ export default function ClientForm({ onSuccess }: ClientFormProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label
             htmlFor="phone"
@@ -147,7 +147,7 @@ export default function ClientForm({ onSuccess }: ClientFormProps) {
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label
             htmlFor="favoriteFlowers"
@@ -222,7 +222,7 @@ export default function ClientForm({ onSuccess }: ClientFormProps) {
         type="submit"
         data-ocid="client_form.submit_button"
         disabled={addClient.isPending}
-        className="w-full"
+        className="w-full min-h-[44px]"
       >
         {addClient.isPending ? (
           <>
