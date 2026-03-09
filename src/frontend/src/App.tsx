@@ -5,12 +5,15 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  useNavigate,
 } from "@tanstack/react-router";
 import Layout from "./components/Layout";
+import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
+import Products from "./pages/Products";
+import Reports from "./pages/Reports";
+import Vip from "./pages/Vip";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -38,10 +41,38 @@ const ordersRoute = createRoute({
   component: Orders,
 });
 
+const vipRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/vip",
+  component: Vip,
+});
+
+const calendarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/calendar",
+  component: Calendar,
+});
+
+const productsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/products",
+  component: Products,
+});
+
+const reportsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reports",
+  component: Reports,
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   clientsRoute,
   ordersRoute,
+  vipRoute,
+  calendarRoute,
+  productsRoute,
+  reportsRoute,
 ]);
 
 const router = createRouter({ routeTree });

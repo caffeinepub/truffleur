@@ -116,31 +116,32 @@ export default function Dashboard() {
       primary: false,
     },
     {
+      label: "VIP Clients",
+      icon: Crown,
+      ocid: "dashboard.vip.button",
+      onClick: () => navigate({ to: "/vip" }),
+      primary: false,
+    },
+    {
       label: "Products",
       icon: LayoutGrid,
       ocid: "dashboard.products.button",
-      onClick: () => {},
+      onClick: () => navigate({ to: "/products" }),
       primary: false,
-      disabled: true,
-      badge: "Phase 2",
     },
     {
       label: "Calendar",
       icon: CalendarDays,
       ocid: "dashboard.calendar.button",
-      onClick: () => {},
+      onClick: () => navigate({ to: "/calendar" }),
       primary: false,
-      disabled: true,
-      badge: "Phase 2",
     },
     {
       label: "Reports",
       icon: BarChart3,
       ocid: "dashboard.reports.button",
-      onClick: () => {},
+      onClick: () => navigate({ to: "/reports" }),
       primary: false,
-      disabled: true,
-      badge: "Phase 2",
     },
   ];
 
@@ -206,20 +207,17 @@ export default function Dashboard() {
         <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-5">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {quickActions.map((action) => (
             <button
               type="button"
               key={action.label}
               data-ocid={action.ocid}
               onClick={action.onClick}
-              disabled={action.disabled}
               className={`relative group flex flex-col items-start gap-3 p-5 rounded-xl border transition-all duration-200 text-left ${
-                action.disabled
-                  ? "border-border/40 bg-card/40 cursor-not-allowed opacity-60"
-                  : action.primary
-                    ? "border-primary/30 bg-accent/30 hover:bg-accent/60 hover:border-primary/50 hover:shadow-card cursor-pointer"
-                    : "border-border bg-card hover:bg-secondary hover:shadow-card cursor-pointer"
+                action.primary
+                  ? "border-primary/30 bg-accent/30 hover:bg-accent/60 hover:border-primary/50 hover:shadow-card cursor-pointer"
+                  : "border-border bg-card hover:bg-secondary hover:shadow-card cursor-pointer"
               }`}
             >
               <div
@@ -242,11 +240,6 @@ export default function Dashboard() {
               >
                 {action.label}
               </span>
-              {action.badge && (
-                <span className="absolute top-3 right-3 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
-                  {action.badge}
-                </span>
-              )}
             </button>
           ))}
         </div>

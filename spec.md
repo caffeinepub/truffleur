@@ -1,28 +1,33 @@
-# TRUFFLEUR
+# TRUFFLEUR — Phase 2
 
 ## Current State
-New project. No existing code.
+Phase 1 is complete. The app has:
+- Dashboard with stats and quick actions (Products/Calendar/Reports shown as disabled "Phase 2" buttons)
+- Clients page with full CRM functionality
+- Orders page with status management
+- Layout with sidebar nav (Dashboard, Clients, Orders)
 
 ## Requested Changes (Diff)
 
 ### Add
-- Dashboard module with stats (total clients, active orders, today's deliveries, VIP clients, upcoming dates, weekly sales) and quick action buttons (Add Client, Add Order, Today Deliveries, Products, Calendar, Reports)
-- Clients module: searchable/filterable client list, client detail page, add/edit client form with fields: first name, last name, phone, Instagram, email, client type, favorite flowers, favorite sweets, important dates, notes, VIP status
-- Orders module: filterable order list by status, order detail view, add/edit order form with fields: client, product, quantity, details, occasion, delivery date, address/pickup, price, deposit, status, notes, special request, card message
-- Order statuses: New, In Progress, Ready, Delivered, Cancelled
-- VIP auto-assignment: client becomes VIP if they have 5+ orders or total spending exceeds threshold
-- Backend data models: Client, Order, Product (basic seed data for products)
+- `/vip` route: VIP Clients page — filtered view of clients with isVip=true, showing VIP badge, total spend, order history, and special notes. Auto-assigns VIP based on total spend threshold (e.g. 50,000 MKD). Allow manually toggling VIP status.
+- `/calendar` route: Calendar/Reminders page — monthly calendar view showing birthdays, anniversaries, scheduled deliveries, and custom reminders. Each day shows colored event dots. Sidebar lists upcoming events within 30 days.
+- `/products` route: Products page — product catalog with name, category (Truffles, Flowers, Gift Boxes, Seasonal), price, cost, and profit calculation. Add/Edit/Delete products. Show profit margin per item.
+- `/reports` route: Reports page — business insights: total revenue, top 5 clients by spend, best-selling products, order status breakdown chart, monthly revenue trend.
 
 ### Modify
-- N/A
+- Layout: Add VIP, Calendar, Products, Reports to sidebar nav and mobile nav
+- Dashboard: Enable the 4 quick action buttons (Products, Calendar, Reports) and add a VIP shortcut, removing the "Phase 2" disabled state
+- App.tsx: Register the 4 new routes
 
 ### Remove
-- N/A
+- "Phase 2" disabled badges from Dashboard quick action buttons
 
 ## Implementation Plan
-1. Backend: Client and Order actors with CRUD operations, VIP auto-calculation, dashboard stats query
-2. Frontend: Side navigation layout with Dashboard, Clients, Orders routes
-3. Dashboard page: stat cards + quick action buttons
-4. Clients page: list with search/filter, add/edit modal or form page, client detail view
-5. Orders page: list with status filter, add/edit modal or form page
-6. Luxury visual style: cream/beige palette, blush accents, dark taupe text, serif headings, premium feminine aesthetic
+1. Create `/src/frontend/src/pages/VipClients.tsx` — pulls clients, filters VIP, shows profiles with spend and actions
+2. Create `/src/frontend/src/pages/CalendarPage.tsx` — monthly grid, event dots, upcoming sidebar, sample reminders seeded from existing client birthdays/anniversaries
+3. Create `/src/frontend/src/pages/Products.tsx` — product list with add/edit/delete, profit calc
+4. Create `/src/frontend/src/pages/Reports.tsx` — charts (BarChart for revenue, PieChart for order status), top clients table, best sellers list
+5. Update `App.tsx` — add 4 routes
+6. Update `Layout.tsx` — add nav links for all 4 pages
+7. Update `Dashboard.tsx` — wire quick action buttons to new routes

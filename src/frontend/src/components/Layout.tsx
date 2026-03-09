@@ -1,5 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Gem, LayoutDashboard, ShoppingBag, Users } from "lucide-react";
+import {
+  BarChart3,
+  CalendarDays,
+  Crown,
+  Gem,
+  LayoutDashboard,
+  LayoutGrid,
+  ShoppingBag,
+  Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 const navItems = [
@@ -15,6 +24,30 @@ const navItems = [
     label: "Orders",
     icon: ShoppingBag,
     ocid: "nav.orders.link",
+  },
+  {
+    to: "/vip",
+    label: "VIP Clients",
+    icon: Crown,
+    ocid: "nav.vip.link",
+  },
+  {
+    to: "/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
+    ocid: "nav.calendar.link",
+  },
+  {
+    to: "/products",
+    label: "Products",
+    icon: LayoutGrid,
+    ocid: "nav.products.link",
+  },
+  {
+    to: "/reports",
+    label: "Reports",
+    icon: BarChart3,
+    ocid: "nav.reports.link",
   },
 ];
 
@@ -43,7 +76,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <p className="text-xs font-medium text-sidebar-foreground/40 tracking-widest uppercase px-3 mb-4">
             Navigation
           </p>
@@ -120,7 +153,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     : "text-sidebar-foreground/50 hover:text-sidebar-foreground"
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-4 h-4" />
               </Link>
             );
           })}
