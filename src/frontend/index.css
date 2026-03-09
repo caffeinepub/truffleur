@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cream / beige background */
+    --background: 0.965 0.012 82;
+    --foreground: 0.22 0.04 46;
+
+    /* Card: warm white */
+    --card: 0.99 0.007 78;
+    --card-foreground: 0.22 0.04 46;
+
+    /* Popover */
+    --popover: 0.99 0.007 78;
+    --popover-foreground: 0.22 0.04 46;
+
+    /* Primary: blush rose */
+    --primary: 0.68 0.11 22;
+    --primary-foreground: 0.99 0.005 78;
+
+    /* Secondary: warm cream */
+    --secondary: 0.93 0.025 78;
+    --secondary-foreground: 0.28 0.04 46;
+
+    /* Muted */
+    --muted: 0.95 0.015 78;
+    --muted-foreground: 0.50 0.035 46;
+
+    /* Accent: soft blush tint */
+    --accent: 0.90 0.06 22;
+    --accent-foreground: 0.28 0.04 46;
+
+    /* Destructive */
+    --destructive: 0.55 0.20 25;
+    --destructive-foreground: 0.99 0.005 78;
+
+    /* Border / Input */
+    --border: 0.88 0.025 72;
+    --input: 0.88 0.025 72;
+    --ring: 0.68 0.11 22;
+
+    --radius: 0.5rem;
+
+    /* Sidebar: dark taupe */
+    --sidebar: 0.24 0.04 46;
+    --sidebar-foreground: 0.95 0.012 78;
+    --sidebar-primary: 0.78 0.09 22;
+    --sidebar-primary-foreground: 0.22 0.04 46;
+    --sidebar-accent: 0.32 0.05 46;
+    --sidebar-accent-foreground: 0.95 0.012 78;
+    --sidebar-border: 0.30 0.04 46;
+    --sidebar-ring: 0.78 0.09 22;
+
+    /* Charts */
+    --chart-1: 0.68 0.11 22;
+    --chart-2: 0.75 0.08 55;
+    --chart-3: 0.60 0.09 38;
+    --chart-4: 0.82 0.06 78;
+    --chart-5: 0.50 0.07 22;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.78 0.04 46);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.60 0.06 46);
+}
+
+/* Grain texture overlay */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
