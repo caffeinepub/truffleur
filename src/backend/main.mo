@@ -59,7 +59,7 @@ actor {
   // Retained for upgrade compatibility with previous version
   stable var seedProducts : [Product] = [];
 
-  // Stable storage - survives upgrades
+  // Stable storage - survives upgrades AND canister restarts
   stable var stableClients : [Client] = [];
   stable var stableOrders : [Order] = [];
   stable var stableProducts : [Product] = [];
@@ -76,7 +76,7 @@ actor {
   var ordersCounter = stableOrdersCounter;
   var productsCounter = stableProductsCounter;
 
-  // Restore data from stable arrays on startup
+  // Restore data from stable arrays on startup / after upgrade
   for (c in stableClients.vals()) { clients.add(c.id, c) };
   for (o in stableOrders.vals()) { orders.add(o.id, o) };
   for (p in stableProducts.vals()) { products.add(p.id, p) };
@@ -91,11 +91,9 @@ actor {
     stableProductsCounter := productsCounter;
   };
 
-  // Clear stable arrays after upgrade (data is back in Maps)
+  // Do NOT clear stable arrays after upgrade so data survives canister restarts
   system func postupgrade() {
-    stableClients := [];
-    stableOrders := [];
-    stableProducts := [];
+    // Intentionally left empty - stable arrays are kept as persistent backup
   };
 
   public shared ({ caller }) func addClient(firstName : Text, lastName : Text, phone : Text, instagram : Text, email : Text, clientType : Text, favoriteFlowers : Text, favoriteTruffles : Text, importantDates : Text, notes : Text, isVip : Bool) : async Nat {
@@ -115,6 +113,9 @@ actor {
       isVip;
     };
     clients.add(clientId, client);
+    // Immediately persist to stable storage so data survives restarts
+    stableClients := clients.values().toArray();
+    stableClientsCounter := clientsCounter + 1;
     clientsCounter += 1;
     clientId;
   };
@@ -138,6 +139,7 @@ actor {
           isVip;
         };
         clients.add(id, updated);
+        stableClients := clients.values().toArray();
         true;
       };
     };
@@ -166,6 +168,8 @@ actor {
       createdAt;
     };
     orders.add(orderId, order);
+    stableOrders := orders.values().toArray();
+    stableOrdersCounter := ordersCounter + 1;
     ordersCounter += 1;
     orderId;
   };
@@ -191,6 +195,7 @@ actor {
           createdAt = existing.createdAt;
         };
         orders.add(id, updated);
+        stableOrders := orders.values().toArray();
         true;
       };
     };
@@ -214,6 +219,8 @@ actor {
       costPrice;
     };
     products.add(productId, product);
+    stableProducts := products.values().toArray();
+    stableProductsCounter := productsCounter + 1;
     productsCounter += 1;
     productId;
   };
@@ -230,6 +237,7 @@ actor {
           costPrice;
         };
         products.add(id, updated);
+        stableProducts := products.values().toArray();
         true;
       };
     };
