@@ -83,8 +83,7 @@ export function useUpdateClient() {
       isVip: boolean;
     }) => {
       if (!actor) throw new Error("No actor");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (actor as any).updateClient(
+      return actor.updateClient(
         data.id,
         data.firstName,
         data.lastName,
@@ -167,8 +166,7 @@ export function useUpdateOrder() {
       notes: string;
     }) => {
       if (!actor) throw new Error("No actor");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (actor as any).updateOrder(
+      return actor.updateOrder(
         data.id,
         data.clientId,
         data.clientName,

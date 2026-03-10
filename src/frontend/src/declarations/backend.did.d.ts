@@ -64,6 +64,23 @@ export interface _SERVICE {
     ],
     bigint
   >,
+  'updateClient' : ActorMethod<
+    [
+      bigint,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      boolean,
+    ],
+    boolean
+  >,
   'addOrder' : ActorMethod<
     [
       bigint,
@@ -82,7 +99,26 @@ export interface _SERVICE {
     ],
     bigint
   >,
+  'updateOrder' : ActorMethod<
+    [
+      bigint,
+      bigint,
+      string,
+      string,
+      bigint,
+      string,
+      string,
+      string,
+      boolean,
+      bigint,
+      bigint,
+      string,
+      string,
+    ],
+    boolean
+  >,
   'addProduct' : ActorMethod<[string, string, bigint, bigint], bigint>,
+  'updateProduct' : ActorMethod<[bigint, string, string, bigint, bigint], boolean>,
   'getAllClients' : ActorMethod<[], Array<Client>>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,

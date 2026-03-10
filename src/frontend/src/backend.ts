@@ -128,8 +128,11 @@ export interface Product {
 }
 export interface backendInterface {
     addClient(firstName: string, lastName: string, phone: string, instagram: string, email: string, clientType: string, favoriteFlowers: string, favoriteTruffles: string, importantDates: string, notes: string, isVip: boolean): Promise<bigint>;
+    updateClient(id: bigint, firstName: string, lastName: string, phone: string, instagram: string, email: string, clientType: string, favoriteFlowers: string, favoriteTruffles: string, importantDates: string, notes: string, isVip: boolean): Promise<boolean>;
     addOrder(clientId: bigint, clientName: string, productName: string, quantity: bigint, occasion: string, deliveryDate: string, deliveryAddress: string, isPickup: boolean, price: bigint, deposit: bigint, status: string, notes: string, createdAt: bigint): Promise<bigint>;
+    updateOrder(id: bigint, clientId: bigint, clientName: string, productName: string, quantity: bigint, occasion: string, deliveryDate: string, deliveryAddress: string, isPickup: boolean, price: bigint, deposit: bigint, status: string, notes: string): Promise<boolean>;
     addProduct(name: string, category: string, basePrice: bigint, costPrice: bigint): Promise<bigint>;
+    updateProduct(id: bigint, name: string, category: string, basePrice: bigint, costPrice: bigint): Promise<boolean>;
     getAllClients(): Promise<Array<Client>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllProducts(): Promise<Array<Product>>;
@@ -151,6 +154,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateClient(arg0: bigint, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string, arg8: string, arg9: string, arg10: string, arg11: boolean): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateClient(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateClient(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+            return result;
+        }
+    }
     async addOrder(arg0: bigint, arg1: string, arg2: string, arg3: bigint, arg4: string, arg5: string, arg6: string, arg7: boolean, arg8: bigint, arg9: bigint, arg10: string, arg11: string, arg12: bigint): Promise<bigint> {
         if (this.processError) {
             try {
@@ -165,6 +182,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateOrder(arg0: bigint, arg1: bigint, arg2: string, arg3: string, arg4: bigint, arg5: string, arg6: string, arg7: string, arg8: boolean, arg9: bigint, arg10: bigint, arg11: string, arg12: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateOrder(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateOrder(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+            return result;
+        }
+    }
     async addProduct(arg0: string, arg1: string, arg2: bigint, arg3: bigint): Promise<bigint> {
         if (this.processError) {
             try {
@@ -176,6 +207,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addProduct(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async updateProduct(arg0: bigint, arg1: string, arg2: string, arg3: bigint, arg4: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateProduct(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateProduct(arg0, arg1, arg2, arg3, arg4);
             return result;
         }
     }
