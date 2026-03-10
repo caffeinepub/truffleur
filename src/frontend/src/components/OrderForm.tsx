@@ -177,9 +177,13 @@ export default function OrderForm({
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Delivery Date
+            Date &amp; Time
           </Label>
-          <Input type="date" {...field("deliveryDate")} />
+          <Input
+            data-ocid="order_form.delivery_date.input"
+            type="datetime-local"
+            {...field("deliveryDate")}
+          />
         </div>
       </div>
 

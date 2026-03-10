@@ -2,13 +2,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, Truck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGetAllOrders } from "../hooks/useQueries";
+import { parseDatePart, parseTimePart } from "../lib/dateUtils";
 
 type CalendarEvent = {
-  date: string;
-  label: string;
+  date: string; // date portion only "YYYY-MM-DD"
+  time: string; // "HH:MM" or ""
+  label: string; // "clientName — productName"
+  address: string; // deliveryAddress or "Pickup"
   type: "delivery";
   orderId: string;
 };
@@ -61,8 +64,10 @@ export default function Calendar() {
     return orders
       .filter((o) => o.deliveryDate && o.status !== "Cancelled")
       .map((o) => ({
-        date: o.deliveryDate,
+        date: parseDatePart(o.deliveryDate),
+        time: parseTimePart(o.deliveryDate),
         label: `${o.clientName} — ${o.productName}`,
+        address: o.isPickup ? "Pickup" : o.deliveryAddress || "",
         type: "delivery" as const,
         orderId: String(o.id),
       }));
@@ -196,13 +201,18 @@ export default function Calendar() {
                       {dayEvents.slice(0, 2).map((ev) => (
                         <div
                           key={ev.orderId}
-                          title={ev.label}
+                          title={`${ev.label}${ev.time ? ` · ${ev.time}` : ""}${ev.address ? ` · ${ev.address}` : ""}`}
                           className="flex items-center gap-1 px-1 py-0.5 rounded text-xs bg-chart-3/15 text-chart-3 truncate"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-chart-3 shrink-0" />
-                          <span className="truncate text-[10px]">
+                          <span className="truncate text-[10px] flex-1">
                             {ev.label.split(" — ")[0]}
                           </span>
+                          {ev.time && (
+                            <span className="text-[9px] text-muted-foreground shrink-0">
+                              {ev.time}
+                            </span>
+                          )}
                         </div>
                       ))}
                       {dayEvents.length > 2 && (
@@ -272,6 +282,20 @@ export default function Calendar() {
                         <p className="text-xs font-medium text-foreground truncate">
                           {ev.label}
                         </p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                          {ev.time && (
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <Clock className="w-2.5 h-2.5" />
+                              {ev.time}
+                            </span>
+                          )}
+                          {ev.address && (
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground truncate max-w-[140px]">
+                              <MapPin className="w-2.5 h-2.5 shrink-0" />
+                              <span className="truncate">{ev.address}</span>
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge
                             variant="outline"
