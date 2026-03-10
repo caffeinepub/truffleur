@@ -13,33 +13,46 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useAddOrder, useGetAllClients } from "../hooks/useQueries";
+import type { Order } from "../backend.d";
+import {
+  useAddOrder,
+  useGetAllClients,
+  useUpdateOrder,
+} from "../hooks/useQueries";
 
 interface OrderFormProps {
   defaultClientName?: string;
   onSuccess?: () => void;
+  editOrder?: Order;
 }
 
 export default function OrderForm({
   defaultClientName = "",
   onSuccess,
+  editOrder,
 }: OrderFormProps) {
   const addOrder = useAddOrder();
+  const updateOrder = useUpdateOrder();
   const { data: clients = [] } = useGetAllClients();
+  const isEditing = !!editOrder;
 
   const [form, setForm] = useState({
-    clientName: defaultClientName,
-    productName: "",
-    quantity: "1",
-    occasion: "",
-    deliveryDate: "",
-    deliveryAddress: "",
-    isPickup: false,
-    price: "",
-    deposit: "",
-    status: "New",
-    notes: "",
+    clientName: editOrder?.clientName ?? defaultClientName,
+    productName: editOrder?.productName ?? "",
+    quantity: editOrder ? String(editOrder.quantity) : "1",
+    occasion: editOrder?.occasion ?? "",
+    deliveryDate: editOrder?.deliveryDate ?? "",
+    deliveryAddress: editOrder?.isPickup
+      ? ""
+      : (editOrder?.deliveryAddress ?? ""),
+    isPickup: editOrder?.isPickup ?? false,
+    price: editOrder ? String(editOrder.price) : "",
+    deposit: editOrder ? String(editOrder.deposit) : "",
+    status: editOrder?.status ?? "New",
+    notes: editOrder?.notes ?? "",
   });
+
+  const isPending = isEditing ? updateOrder.isPending : addOrder.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,24 +62,43 @@ export default function OrderForm({
         form.clientName.toLowerCase(),
     );
     try {
-      await addOrder.mutateAsync({
-        clientId: matchedClient?.id ?? 0n,
-        clientName: form.clientName,
-        productName: form.productName,
-        quantity: BigInt(form.quantity || "1"),
-        occasion: form.occasion,
-        deliveryDate: form.deliveryDate,
-        deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
-        isPickup: form.isPickup,
-        price: BigInt(form.price || "0"),
-        deposit: BigInt(form.deposit || "0"),
-        status: form.status,
-        notes: form.notes,
-      });
-      toast.success("Order added successfully");
+      if (isEditing) {
+        await updateOrder.mutateAsync({
+          id: editOrder.id,
+          clientId: matchedClient?.id ?? editOrder.clientId,
+          clientName: form.clientName,
+          productName: form.productName,
+          quantity: BigInt(form.quantity || "1"),
+          occasion: form.occasion,
+          deliveryDate: form.deliveryDate,
+          deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
+          isPickup: form.isPickup,
+          price: BigInt(form.price || "0"),
+          deposit: BigInt(form.deposit || "0"),
+          status: form.status,
+          notes: form.notes,
+        });
+        toast.success("Order updated successfully");
+      } else {
+        await addOrder.mutateAsync({
+          clientId: matchedClient?.id ?? 0n,
+          clientName: form.clientName,
+          productName: form.productName,
+          quantity: BigInt(form.quantity || "1"),
+          occasion: form.occasion,
+          deliveryDate: form.deliveryDate,
+          deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
+          isPickup: form.isPickup,
+          price: BigInt(form.price || "0"),
+          deposit: BigInt(form.deposit || "0"),
+          status: form.status,
+          notes: form.notes,
+        });
+        toast.success("Order added successfully");
+      }
       onSuccess?.();
     } catch {
-      toast.error("Failed to add order");
+      toast.error(isEditing ? "Failed to update order" : "Failed to add order");
     }
   };
 
@@ -243,13 +275,16 @@ export default function OrderForm({
       <Button
         type="submit"
         data-ocid="order_form.submit_button"
-        disabled={addOrder.isPending}
+        disabled={isPending}
         className="w-full min-h-[44px]"
       >
-        {addOrder.isPending ? (
+        {isPending ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {isEditing ? "Updating..." : "Saving..."}
           </>
+        ) : isEditing ? (
+          "Update Order"
         ) : (
           "Save Order"
         )}

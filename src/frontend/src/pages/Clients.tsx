@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Crown,
+  Edit2,
   Instagram,
   Mail,
   Phone,
@@ -48,11 +49,16 @@ export default function Clients() {
     return matchSearch && matchVip;
   });
 
-  if (selectedClient) {
+  // Keep selectedClient in sync after edits
+  const currentClient = selectedClient
+    ? (clients.find((c) => c.id === selectedClient.id) ?? selectedClient)
+    : null;
+
+  if (currentClient) {
     return (
       <ClientDetail
-        client={selectedClient}
-        orders={orders.filter((o) => o.clientId === selectedClient.id)}
+        client={currentClient}
+        orders={orders.filter((o) => o.clientId === currentClient.id)}
         onBack={() => setSelectedClient(null)}
       />
     );
@@ -190,6 +196,7 @@ function ClientDetail({
   onBack: () => void;
 }) {
   const [addOrderOpen, setAddOrderOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const totalSpent = orders.reduce((s, o) => s + Number(o.price), 0);
 
   return (
@@ -226,6 +233,38 @@ function ClientDetail({
             {client.clientType}
           </p>
         </div>
+        {/* Edit Client button */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              data-ocid="clients.edit_client.button"
+              className="gap-2 min-h-[44px] shrink-0"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              Edit
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="font-display text-2xl">
+                Edit Client
+              </DialogTitle>
+            </DialogHeader>
+            <div
+              className="overflow-y-auto flex-1 pr-1"
+              style={{ maxHeight: "calc(90dvh - 80px)" }}
+            >
+              <div className="pb-4">
+                <ClientForm
+                  editClient={client}
+                  onSuccess={() => setEditOpen(false)}
+                />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}

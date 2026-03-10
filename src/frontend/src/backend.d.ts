@@ -46,7 +46,9 @@ export interface Product {
 }
 export interface backendInterface {
     addClient(firstName: string, lastName: string, phone: string, instagram: string, email: string, clientType: string, favoriteFlowers: string, favoriteTruffles: string, importantDates: string, notes: string, isVip: boolean): Promise<bigint>;
+    updateClient(id: bigint, firstName: string, lastName: string, phone: string, instagram: string, email: string, clientType: string, favoriteFlowers: string, favoriteTruffles: string, importantDates: string, notes: string, isVip: boolean): Promise<boolean>;
     addOrder(clientId: bigint, clientName: string, productName: string, quantity: bigint, occasion: string, deliveryDate: string, deliveryAddress: string, isPickup: boolean, price: bigint, deposit: bigint, status: string, notes: string, createdAt: bigint): Promise<bigint>;
+    updateOrder(id: bigint, clientId: bigint, clientName: string, productName: string, quantity: bigint, occasion: string, deliveryDate: string, deliveryAddress: string, isPickup: boolean, price: bigint, deposit: bigint, status: string, notes: string): Promise<boolean>;
     addProduct(name: string, category: string, basePrice: bigint, costPrice: bigint): Promise<bigint>;
     getAllClients(): Promise<Array<Client>>;
     getAllOrders(): Promise<Array<Order>>;

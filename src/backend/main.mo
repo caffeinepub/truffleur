@@ -123,6 +123,30 @@ actor {
     clientId;
   };
 
+  public shared ({ caller }) func updateClient(id : Nat, firstName : Text, lastName : Text, phone : Text, instagram : Text, email : Text, clientType : Text, favoriteFlowers : Text, favoriteTruffles : Text, importantDates : Text, notes : Text, isVip : Bool) : async Bool {
+    switch (clients.get(id)) {
+      case null { false };
+      case (?_existing) {
+        let updated : Client = {
+          id;
+          firstName;
+          lastName;
+          phone;
+          instagram;
+          email;
+          clientType;
+          favoriteFlowers;
+          favoriteTruffles;
+          importantDates;
+          notes;
+          isVip;
+        };
+        clients.add(id, updated);
+        true;
+      };
+    };
+  };
+
   public query ({ caller }) func getAllClients() : async [Client] {
     clients.values().toArray();
   };
@@ -148,6 +172,32 @@ actor {
     orders.add(orderId, order);
     ordersCounter += 1;
     orderId;
+  };
+
+  public shared ({ caller }) func updateOrder(id : Nat, clientId : Nat, clientName : Text, productName : Text, quantity : Nat, occasion : Text, deliveryDate : Text, deliveryAddress : Text, isPickup : Bool, price : Nat, deposit : Nat, status : Text, notes : Text) : async Bool {
+    switch (orders.get(id)) {
+      case null { false };
+      case (?existing) {
+        let updated : Order = {
+          id;
+          clientId;
+          clientName;
+          productName;
+          quantity;
+          occasion;
+          deliveryDate;
+          deliveryAddress;
+          isPickup;
+          price;
+          deposit;
+          status;
+          notes;
+          createdAt = existing.createdAt;
+        };
+        orders.add(id, updated);
+        true;
+      };
+    };
   };
 
   public query ({ caller }) func getAllOrders() : async [Order] {

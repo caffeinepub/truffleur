@@ -14,37 +14,49 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Client } from "../backend.d";
-import { useAddClient } from "../hooks/useQueries";
+import { useAddClient, useUpdateClient } from "../hooks/useQueries";
 
 interface ClientFormProps {
   onSuccess?: () => void;
-  defaultValues?: Partial<Client>;
+  editClient?: Client;
 }
 
-export default function ClientForm({ onSuccess }: ClientFormProps) {
+export default function ClientForm({ onSuccess, editClient }: ClientFormProps) {
   const addClient = useAddClient();
+  const updateClient = useUpdateClient();
+  const isEditing = !!editClient;
+
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    instagram: "",
-    email: "",
-    clientType: "Individual",
-    favoriteFlowers: "",
-    favoriteTruffles: "",
-    importantDates: "",
-    notes: "",
-    isVip: false,
+    firstName: editClient?.firstName ?? "",
+    lastName: editClient?.lastName ?? "",
+    phone: editClient?.phone ?? "",
+    instagram: editClient?.instagram ?? "",
+    email: editClient?.email ?? "",
+    clientType: editClient?.clientType ?? "Individual",
+    favoriteFlowers: editClient?.favoriteFlowers ?? "",
+    favoriteTruffles: editClient?.favoriteTruffles ?? "",
+    importantDates: editClient?.importantDates ?? "",
+    notes: editClient?.notes ?? "",
+    isVip: editClient?.isVip ?? false,
   });
+
+  const isPending = isEditing ? updateClient.isPending : addClient.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await addClient.mutateAsync(form);
-      toast.success("Client added successfully");
+      if (isEditing) {
+        await updateClient.mutateAsync({ id: editClient.id, ...form });
+        toast.success("Client updated successfully");
+      } else {
+        await addClient.mutateAsync(form);
+        toast.success("Client added successfully");
+      }
       onSuccess?.();
     } catch {
-      toast.error("Failed to add client");
+      toast.error(
+        isEditing ? "Failed to update client" : "Failed to add client",
+      );
     }
   };
 
@@ -221,13 +233,16 @@ export default function ClientForm({ onSuccess }: ClientFormProps) {
       <Button
         type="submit"
         data-ocid="client_form.submit_button"
-        disabled={addClient.isPending}
+        disabled={isPending}
         className="w-full min-h-[44px]"
       >
-        {addClient.isPending ? (
+        {isPending ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {isEditing ? "Updating..." : "Saving..."}
           </>
+        ) : isEditing ? (
+          "Update Client"
         ) : (
           "Save Client"
         )}
