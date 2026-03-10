@@ -44,89 +44,6 @@ const CATEGORY_COLORS: Record<ProductCategory, string> = {
   Seasonal: "bg-chart-3/10 text-chart-3 border-chart-3/20",
 };
 
-const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: "Black Truffle Box (50g)",
-    category: "Truffles",
-    price: 3500,
-    cost: 1800,
-    stock: 12,
-  },
-  {
-    id: 2,
-    name: "White Truffle Slices (30g)",
-    category: "Truffles",
-    price: 2800,
-    cost: 1400,
-    stock: 8,
-  },
-  {
-    id: 3,
-    name: "Truffle Honey Jar",
-    category: "Truffles",
-    price: 1200,
-    cost: 500,
-    stock: 25,
-  },
-  {
-    id: 4,
-    name: "Peony Bouquet (12 stems)",
-    category: "Flowers",
-    price: 2200,
-    cost: 900,
-    stock: 6,
-  },
-  {
-    id: 5,
-    name: "Rose Collection (24 stems)",
-    category: "Flowers",
-    price: 3200,
-    cost: 1100,
-    stock: 4,
-  },
-  {
-    id: 6,
-    name: "Orchid Arrangement",
-    category: "Flowers",
-    price: 4500,
-    cost: 1800,
-    stock: 3,
-  },
-  {
-    id: 7,
-    name: "Luxury Gift Box — Classic",
-    category: "Gift Boxes",
-    price: 5500,
-    cost: 2200,
-    stock: 10,
-  },
-  {
-    id: 8,
-    name: "Truffle & Flowers Premium Set",
-    category: "Gift Boxes",
-    price: 8900,
-    cost: 3500,
-    stock: 7,
-  },
-  {
-    id: 9,
-    name: "Valentine's Rose Box",
-    category: "Seasonal",
-    price: 4200,
-    cost: 1700,
-    stock: 15,
-  },
-  {
-    id: 10,
-    name: "Mother's Day Hamper",
-    category: "Seasonal",
-    price: 6800,
-    cost: 2800,
-    stock: 20,
-  },
-];
-
 const EMPTY_FORM: Omit<Product, "id"> = {
   name: "",
   category: "Truffles",
@@ -136,7 +53,7 @@ const EMPTY_FORM: Omit<Product, "id"> = {
 };
 
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<Omit<Product, "id">>(EMPTY_FORM);
@@ -360,13 +277,16 @@ export default function Products() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md" data-ocid="products.dialog">
-          <DialogHeader>
+        <DialogContent
+          className="max-w-md flex flex-col max-h-[90dvh]"
+          data-ocid="products.dialog"
+        >
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="font-display text-2xl">
               {editingProduct ? "Edit Product" : "Add Product"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
             <div className="space-y-1.5">
               <Label htmlFor="product-name">Product Name</Label>
               <Input
@@ -453,7 +373,7 @@ export default function Products() {
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-2">
             <Button
               variant="outline"
               data-ocid="products.cancel.button"
