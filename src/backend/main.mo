@@ -56,51 +56,47 @@ actor {
     };
   };
 
+  // Retained for upgrade compatibility with previous version
+  stable var seedProducts : [Product] = [];
+
+  // Stable storage - survives upgrades
+  stable var stableClients : [Client] = [];
+  stable var stableOrders : [Order] = [];
+  stable var stableProducts : [Product] = [];
+  stable var stableClientsCounter : Nat = 0;
+  stable var stableOrdersCounter : Nat = 0;
+  stable var stableProductsCounter : Nat = 0;
+
+  // In-memory working state rebuilt from stable on startup
   let clients = Map.empty<Nat, Client>();
   let orders = Map.empty<Nat, Order>();
   let products = Map.empty<Nat, Product>();
 
-  var clientsCounter = 0;
-  var ordersCounter = 0;
-  var productsCounter = 0;
+  var clientsCounter = stableClientsCounter;
+  var ordersCounter = stableOrdersCounter;
+  var productsCounter = stableProductsCounter;
 
-  let seedProducts = [
-    {
-      id = 0;
-      name = "Bouquet";
-      category = "Flowers";
-      basePrice = 30_000;
-      costPrice = 10_000;
-    },
-    {
-      id = 1;
-      name = "Truffle Box";
-      category = "Chocolates";
-      basePrice = 20_000;
-      costPrice = 8_000;
-    },
-    {
-      id = 2;
-      name = "Gift Basket";
-      category = "Gifts";
-      basePrice = 50_000;
-      costPrice = 20_000;
-    },
-    {
-      id = 3;
-      name = "Single Rose";
-      category = "Flowers";
-      basePrice = 5_000;
-      costPrice = 2_000;
-    },
-    {
-      id = 4;
-      name = "Mixed Chocolate Box";
-      category = "Chocolates";
-      basePrice = 25_000;
-      costPrice = 10_000;
-    },
-  ];
+  // Restore data from stable arrays on startup
+  for (c in stableClients.vals()) { clients.add(c.id, c) };
+  for (o in stableOrders.vals()) { orders.add(o.id, o) };
+  for (p in stableProducts.vals()) { products.add(p.id, p) };
+
+  // Save to stable before upgrade
+  system func preupgrade() {
+    stableClients := clients.values().toArray();
+    stableOrders := orders.values().toArray();
+    stableProducts := products.values().toArray();
+    stableClientsCounter := clientsCounter;
+    stableOrdersCounter := ordersCounter;
+    stableProductsCounter := productsCounter;
+  };
+
+  // Clear stable arrays after upgrade (data is back in Maps)
+  system func postupgrade() {
+    stableClients := [];
+    stableOrders := [];
+    stableProducts := [];
+  };
 
   public shared ({ caller }) func addClient(firstName : Text, lastName : Text, phone : Text, instagram : Text, email : Text, clientType : Text, favoriteFlowers : Text, favoriteTruffles : Text, importantDates : Text, notes : Text, isVip : Bool) : async Nat {
     let clientId = clientsCounter;
@@ -220,6 +216,23 @@ actor {
     products.add(productId, product);
     productsCounter += 1;
     productId;
+  };
+
+  public shared ({ caller }) func updateProduct(id : Nat, name : Text, category : Text, basePrice : Nat, costPrice : Nat) : async Bool {
+    switch (products.get(id)) {
+      case null { false };
+      case (?_existing) {
+        let updated : Product = {
+          id;
+          name;
+          category;
+          basePrice;
+          costPrice;
+        };
+        products.add(id, updated);
+        true;
+      };
+    };
   };
 
   public query ({ caller }) func getAllProducts() : async [Product] {
