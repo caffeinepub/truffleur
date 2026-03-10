@@ -9,7 +9,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearch } from "@tanstack/react-router";
-import { Edit2, PackagePlus, ShoppingBag } from "lucide-react";
+import { Download, Edit2, PackagePlus, ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Order } from "../backend.d";
 import OrderForm from "../components/OrderForm";
@@ -24,6 +24,54 @@ const STATUSES = [
   "Delivered",
   "Cancelled",
 ];
+
+function exportOrdersToCSV(orders: Order[]) {
+  const headers = [
+    "Order #",
+    "Client",
+    "Product",
+    "Qty",
+    "Occasion",
+    "Delivery Date",
+    "Address",
+    "Price (MKD)",
+    "Deposit (MKD)",
+    "Status",
+    "Notes",
+  ];
+
+  const csvEscape = (val: string | number | bigint | undefined | null) => {
+    const str = val == null ? "" : String(val);
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
+  const rows = orders.map((o) => [
+    csvEscape(String(o.id).padStart(3, "0")),
+    csvEscape(o.clientName),
+    csvEscape(o.productName),
+    csvEscape(Number(o.quantity)),
+    csvEscape(o.occasion ?? ""),
+    csvEscape(o.deliveryDate ?? ""),
+    csvEscape(o.deliveryAddress ?? ""),
+    csvEscape(Number(o.price)),
+    csvEscape(Number(o.deposit ?? 0)),
+    csvEscape(o.status),
+    csvEscape(o.notes ?? ""),
+  ]);
+
+  const csv = [
+    headers.map((h) => `"${h}"`).join(","),
+    ...rows.map((r) => r.join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const date = new Date().toISOString().slice(0, 10);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `truffleur-orders-${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function Orders() {
   const { data: orders = [], isLoading } = useGetAllOrders();
@@ -69,32 +117,44 @@ export default function Orders() {
             Orders
           </h1>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button
-              data-ocid="orders.add_order.button"
-              className="gap-2 min-h-[44px]"
-            >
-              <PackagePlus className="w-4 h-4" />
-              Add Order
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl">
-                New Order
-              </DialogTitle>
-            </DialogHeader>
-            <div
-              className="overflow-y-auto flex-1 pr-1"
-              style={{ maxHeight: "calc(90dvh - 80px)" }}
-            >
-              <div className="pb-4">
-                <OrderForm onSuccess={() => setAddOpen(false)} />
+        <div className="flex items-center gap-2">
+          <Button
+            data-ocid="orders.export_csv.button"
+            variant="outline"
+            className="gap-2 min-h-[44px]"
+            disabled={isLoading || orders.length === 0}
+            onClick={() => exportOrdersToCSV(orders)}
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button
+                data-ocid="orders.add_order.button"
+                className="gap-2 min-h-[44px]"
+              >
+                <PackagePlus className="w-4 h-4" />
+                Add Order
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="font-display text-2xl">
+                  New Order
+                </DialogTitle>
+              </DialogHeader>
+              <div
+                className="overflow-y-auto flex-1 pr-1"
+                style={{ maxHeight: "calc(90dvh - 80px)" }}
+              >
+                <div className="pb-4">
+                  <OrderForm onSuccess={() => setAddOpen(false)} />
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </header>
 
       {/* Status filter tabs — horizontal scroll on mobile */}
