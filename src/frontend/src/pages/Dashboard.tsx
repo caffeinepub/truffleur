@@ -99,7 +99,6 @@ export default function Dashboard() {
       icon: UserPlus,
       ocid: "dashboard.add_client.button",
       onClick: () => navigate({ to: "/clients", search: { action: "add" } }),
-      primary: true,
     },
     {
       label: "Add Order",
@@ -107,7 +106,6 @@ export default function Dashboard() {
       ocid: "dashboard.add_order.button",
       onClick: () =>
         navigate({ to: "/orders", search: { highlight: undefined } }),
-      primary: true,
     },
     {
       label: "Today's Deliveries",
@@ -115,35 +113,30 @@ export default function Dashboard() {
       ocid: "dashboard.deliveries.button",
       onClick: () =>
         navigate({ to: "/orders", search: { highlight: undefined } }),
-      primary: false,
     },
     {
       label: "VIP Clients",
       icon: Crown,
       ocid: "dashboard.vip.button",
       onClick: () => navigate({ to: "/vip" }),
-      primary: false,
     },
     {
       label: "Products",
       icon: LayoutGrid,
       ocid: "dashboard.products.button",
       onClick: () => navigate({ to: "/products" }),
-      primary: false,
     },
     {
       label: "Calendar",
       icon: CalendarDays,
       ocid: "dashboard.calendar.button",
       onClick: () => navigate({ to: "/calendar" }),
-      primary: false,
     },
     {
       label: "Reports",
       icon: BarChart3,
       ocid: "dashboard.reports.button",
       onClick: () => navigate({ to: "/reports" }),
-      primary: false,
     },
   ];
 
@@ -167,44 +160,63 @@ export default function Dashboard() {
         </p>
       </header>
 
-      {/* Signature Truffles Feature Card */}
+      {/* Signature Truffles Feature Card — vivid lavender & green */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
-        <div className="relative overflow-hidden rounded-2xl bg-sidebar border border-sidebar-border shadow-elevated">
-          {/* Subtle radial glow */}
+        <div
+          className="relative overflow-hidden rounded-2xl shadow-elevated"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.30 0.14 148) 0%, oklch(0.38 0.16 148) 30%, oklch(0.55 0.18 290) 65%, oklch(0.45 0.20 290) 100%)",
+            minHeight: "220px",
+          }}
+        >
+          {/* Decorative blurred blobs */}
           <div
-            className="absolute inset-0 opacity-30"
+            className="absolute -bottom-10 -left-10 w-56 h-56 rounded-full pointer-events-none"
+            style={{
+              background: "oklch(0.55 0.20 148 / 0.45)",
+              filter: "blur(48px)",
+            }}
+          />
+          <div
+            className="absolute -top-10 -right-10 w-64 h-64 rounded-full pointer-events-none"
+            style={{
+              background: "oklch(0.72 0.22 290 / 0.50)",
+              filter: "blur(56px)",
+            }}
+          />
+          {/* Extra inner glow for richness */}
+          <div
+            className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "radial-gradient(ellipse at 70% 50%, oklch(0.65 0.10 290 / 0.35) 0%, transparent 60%)",
+                "radial-gradient(ellipse at 60% 40%, oklch(0.68 0.18 290 / 0.25) 0%, transparent 55%)",
             }}
           />
 
           <div className="relative flex flex-col md:flex-row items-stretch">
-            {/* Text side */}
-            <div className="flex-1 p-7 md:p-10 flex flex-col justify-center gap-4">
-              <div className="inline-flex items-center gap-2 w-fit">
-                <span className="w-5 h-px bg-sidebar-primary" />
-                <p className="text-xs font-medium tracking-widest uppercase text-sidebar-primary">
-                  Signature Collection
-                </p>
-              </div>
-
-              <h2 className="font-display text-3xl md:text-4xl font-semibold text-sidebar-foreground leading-tight">
-                Artisan
-                <br />
-                <em className="italic font-normal">Chocolate Truffles</em>
-              </h2>
-
-              <p className="text-sm text-sidebar-foreground/70 leading-relaxed max-w-xs">
-                Handcrafted with premium cocoa and finished with gold leaf — the
-                jewel of every gift box and your signature bestseller.
-              </p>
-
+            {/* Button side */}
+            <div
+              className="flex-1 flex items-center justify-center md:justify-start p-8 md:p-12"
+              style={{ minHeight: "180px" }}
+            >
               <Button
-                size="sm"
+                size="default"
                 data-ocid="dashboard.truffles.button"
                 onClick={() => navigate({ to: "/products" })}
-                className="w-fit mt-1 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 font-medium tracking-wide"
+                className="font-semibold tracking-wide text-white shadow-lg transition-all duration-200"
+                style={{
+                  background: "oklch(0.65 0.22 290)",
+                  border: "none",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "oklch(0.72 0.22 290)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "oklch(0.65 0.22 290)";
+                }}
               >
                 View Products
               </Button>
@@ -216,14 +228,26 @@ export default function Dashboard() {
                 src="/assets/generated/truffle-chocolates.dim_600x400.jpg"
                 alt="Signature chocolate truffles"
                 className="w-full h-full object-cover"
-                style={{ minHeight: "200px" }}
+                style={{
+                  minHeight: "200px",
+                  opacity: 0.55,
+                  mixBlendMode: "luminosity",
+                }}
               />
-              {/* Gradient fade on left edge for desktop */}
+              {/* Strong left-edge fade into banner gradient */}
               <div
-                className="hidden md:block absolute inset-y-0 left-0 w-16"
+                className="hidden md:block absolute inset-y-0 left-0 w-24"
                 style={{
                   background:
-                    "linear-gradient(to right, oklch(0.18 0.065 148), transparent)",
+                    "linear-gradient(to right, oklch(0.55 0.18 290), transparent)",
+                }}
+              />
+              {/* Top + bottom subtle fade */}
+              <div
+                className="absolute inset-x-0 top-0 h-10"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, oklch(0.38 0.16 148 / 0.6), transparent)",
                 }}
               />
             </div>
@@ -280,30 +304,12 @@ export default function Dashboard() {
               key={action.label}
               data-ocid={action.ocid}
               onClick={action.onClick}
-              className={`relative group flex flex-col items-start gap-3 p-5 rounded-xl border transition-all duration-200 text-left ${
-                action.primary
-                  ? "border-primary/30 bg-accent/30 hover:bg-accent/60 hover:border-primary/50 hover:shadow-card cursor-pointer"
-                  : "border-border bg-card hover:bg-secondary hover:shadow-card cursor-pointer"
-              }`}
+              className="relative group flex flex-col items-start gap-3 p-5 rounded-xl border transition-all duration-200 text-left border-primary/30 bg-accent/30 hover:bg-accent/60 hover:border-primary/50 hover:shadow-card cursor-pointer"
             >
-              <div
-                className={`p-2.5 rounded-lg ${
-                  action.primary ? "bg-primary/15" : "bg-muted"
-                }`}
-              >
-                <action.icon
-                  className={`w-5 h-5 ${
-                    action.primary ? "text-primary" : "text-muted-foreground"
-                  }`}
-                />
+              <div className="p-2.5 rounded-lg bg-primary/15">
+                <action.icon className="w-5 h-5 text-primary" />
               </div>
-              <span
-                className={`text-sm font-medium ${
-                  action.primary
-                    ? "text-foreground"
-                    : "text-muted-foreground group-hover:text-foreground"
-                }`}
-              >
+              <span className="text-sm font-medium text-foreground">
                 {action.label}
               </span>
             </button>
