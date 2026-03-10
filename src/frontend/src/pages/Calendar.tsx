@@ -2,10 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  ExternalLink,
   MapPin,
   Truck,
   X,
@@ -66,6 +68,7 @@ export default function Calendar() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data: orders = [], isLoading } = useGetAllOrders();
 
@@ -131,6 +134,11 @@ export default function Calendar() {
     setSelectedDate((prev) => (prev === dateStr ? null : dateStr));
   }
 
+  function goToOrder(orderId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    navigate({ to: "/orders", search: { highlight: orderId } });
+  }
+
   return (
     <div className="p-4 md:p-10 max-w-6xl mx-auto animate-fade-in">
       <header className="mb-8">
@@ -141,7 +149,7 @@ export default function Calendar() {
           Calendar
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Deliveries and upcoming events
+          Deliveries and upcoming events · Tap any event to view the order
         </p>
       </header>
 
@@ -233,18 +241,22 @@ export default function Calendar() {
                       {date.getDate()}
                     </span>
 
-                    {/* Desktop: show full event pills */}
+                    {/* Desktop: show full event pills — clickable */}
                     <div className="hidden sm:flex flex-col gap-1">
                       {dayEvents.map((ev) => (
-                        <div
+                        <button
                           key={ev.orderId}
-                          className="rounded-md px-1.5 py-1 bg-chart-3/15 border border-chart-3/20 text-chart-3"
+                          type="button"
+                          onClick={(e) => goToOrder(ev.orderId, e)}
+                          data-ocid="calendar.event.button"
+                          className="rounded-md px-1.5 py-1 bg-chart-3/15 border border-chart-3/20 text-chart-3 hover:bg-chart-3/25 hover:border-chart-3/40 transition-colors cursor-pointer text-left w-full group"
                         >
                           <div className="flex items-start gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-chart-3 shrink-0 mt-0.5" />
                             <span className="text-[11px] font-medium leading-snug break-words min-w-0 flex-1">
                               {ev.label}
                             </span>
+                            <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" />
                           </div>
                           {ev.time && (
                             <div className="flex items-center gap-1 mt-0.5 pl-2.5">
@@ -262,7 +274,7 @@ export default function Calendar() {
                               </span>
                             </div>
                           )}
-                        </div>
+                        </button>
                       ))}
                     </div>
 
@@ -313,17 +325,22 @@ export default function Calendar() {
               </div>
               <div className="space-y-3">
                 {selectedEvents.map((ev, i) => (
-                  <div
+                  <button
                     key={ev.orderId}
+                    type="button"
                     data-ocid={`calendar.item.${i + 1}`}
-                    className="rounded-lg bg-chart-3/10 border border-chart-3/20 p-3"
+                    onClick={(e) => goToOrder(ev.orderId, e)}
+                    className="w-full text-left rounded-lg bg-chart-3/10 border border-chart-3/20 p-3 hover:bg-chart-3/20 hover:border-chart-3/40 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-start gap-2">
                       <span className="w-2 h-2 rounded-full bg-chart-3 shrink-0 mt-1" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground leading-snug">
-                          {ev.label}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium text-foreground leading-snug">
+                            {ev.label}
+                          </p>
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        </div>
                         {ev.time && (
                           <div className="flex items-center gap-1.5 mt-1.5">
                             <Clock className="w-3 h-3 text-muted-foreground" />
@@ -340,9 +357,12 @@ export default function Calendar() {
                             </span>
                           </div>
                         )}
+                        <p className="text-[11px] text-primary mt-2 font-medium">
+                          Tap to view order →
+                        </p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -358,7 +378,7 @@ export default function Calendar() {
           <div className="flex items-center gap-6 mt-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-chart-3" />
-              Delivery
+              Delivery · Tap event to open order
             </div>
           </div>
         </div>
@@ -392,10 +412,17 @@ export default function Calendar() {
                       (1000 * 60 * 60 * 24),
                   );
                   return (
-                    <div
+                    <button
                       key={ev.orderId}
+                      type="button"
                       data-ocid={`calendar.upcoming.item.${idx + 1}`}
-                      className="flex gap-3 p-3 bg-card border border-border/50 rounded-xl"
+                      onClick={() =>
+                        navigate({
+                          to: "/orders",
+                          search: { highlight: ev.orderId },
+                        })
+                      }
+                      className="w-full text-left flex gap-3 p-3 bg-card border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer group"
                     >
                       <div className="w-10 h-10 rounded-lg bg-chart-3/10 flex flex-col items-center justify-center shrink-0">
                         <span className="text-[10px] font-medium text-chart-3 leading-none">
@@ -408,9 +435,12 @@ export default function Calendar() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground leading-snug">
-                          {ev.label}
-                        </p>
+                        <div className="flex items-start justify-between gap-1">
+                          <p className="text-xs font-medium text-foreground leading-snug">
+                            {ev.label}
+                          </p>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-60 transition-opacity mt-0.5" />
+                        </div>
                         <div className="flex flex-col gap-0.5 mt-1.5">
                           {ev.time && (
                             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -441,7 +471,7 @@ export default function Calendar() {
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

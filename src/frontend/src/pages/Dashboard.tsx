@@ -105,14 +105,16 @@ export default function Dashboard() {
       label: "Add Order",
       icon: PackagePlus,
       ocid: "dashboard.add_order.button",
-      onClick: () => navigate({ to: "/orders", search: { action: "add" } }),
+      onClick: () =>
+        navigate({ to: "/orders", search: { highlight: undefined } }),
       primary: true,
     },
     {
       label: "Today's Deliveries",
       icon: Truck,
       ocid: "dashboard.deliveries.button",
-      onClick: () => navigate({ to: "/orders", search: { status: "today" } }),
+      onClick: () =>
+        navigate({ to: "/orders", search: { highlight: undefined } }),
       primary: false,
     },
     {
@@ -318,7 +320,9 @@ export default function Dashboard() {
             </h2>
             <button
               type="button"
-              onClick={() => navigate({ to: "/orders" })}
+              onClick={() =>
+                navigate({ to: "/orders", search: { highlight: undefined } })
+              }
               className="text-xs text-primary hover:text-primary/70 font-medium transition-colors"
             >
               View all →

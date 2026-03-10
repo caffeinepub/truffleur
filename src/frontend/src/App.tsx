@@ -38,6 +38,9 @@ const clientsRoute = createRoute({
 const ordersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/orders",
+  validateSearch: (search: Record<string, unknown>) => ({
+    highlight: search.highlight ? String(search.highlight) : undefined,
+  }),
   component: Orders,
 });
 

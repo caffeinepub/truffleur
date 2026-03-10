@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearch } from "@tanstack/react-router";
 import { Edit2, PackagePlus, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Order } from "../backend.d";
 import OrderForm from "../components/OrderForm";
 import { useGetAllOrders } from "../hooks/useQueries";
@@ -29,6 +30,29 @@ export default function Orders() {
   const [status, setStatus] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const { highlight } = useSearch({ from: "/orders" });
+  const didScrollRef = useRef(false);
+
+  // When orders load and a highlight param exists, scroll to and flash that order
+  useEffect(() => {
+    if (!highlight || isLoading || orders.length === 0 || didScrollRef.current)
+      return;
+    didScrollRef.current = true;
+
+    // Switch to "All" so the order is visible
+    setStatus("All");
+
+    // Wait a tick for the DOM to render
+    setTimeout(() => {
+      const el = document.querySelector(
+        `[data-order-id="${highlight}"]`,
+      ) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("order-highlight");
+      setTimeout(() => el.classList.remove("order-highlight"), 2500);
+    }, 150);
+  }, [highlight, isLoading, orders]);
 
   const filtered =
     status === "All" ? orders : orders.filter((o) => o.status === status);
@@ -146,6 +170,7 @@ export default function Orders() {
             <div
               key={String(order.id)}
               data-ocid={`orders.item.${idx + 1}`}
+              data-order-id={String(order.id)}
               className="flex flex-col sm:flex-row sm:items-center gap-3 p-5 rounded-xl bg-card border border-border/50 hover:border-primary/20 hover:shadow-card transition-all duration-200"
             >
               {/* Order number */}
