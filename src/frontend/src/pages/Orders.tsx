@@ -6,7 +6,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PackagePlus, ShoppingBag } from "lucide-react";
@@ -54,15 +53,20 @@ export default function Orders() {
               Add Order
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="font-display text-2xl">
                 New Order
               </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-2">
-              <OrderForm onSuccess={() => setAddOpen(false)} />
-            </ScrollArea>
+            <div
+              className="overflow-y-auto flex-1 pr-1"
+              style={{ maxHeight: "calc(90dvh - 80px)" }}
+            >
+              <div className="pb-4">
+                <OrderForm onSuccess={() => setAddOpen(false)} />
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </header>

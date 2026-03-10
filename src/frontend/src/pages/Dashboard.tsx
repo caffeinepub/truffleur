@@ -148,7 +148,7 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
       {/* Header */}
-      <header className="mb-10">
+      <header className="mb-8">
         <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">
           Good {getGreeting()}
         </p>
@@ -164,6 +164,70 @@ export default function Dashboard() {
           })}
         </p>
       </header>
+
+      {/* Signature Truffles Feature Card */}
+      <section className="mb-10" data-ocid="dashboard.truffles.card">
+        <div className="relative overflow-hidden rounded-2xl bg-sidebar border border-sidebar-border shadow-elevated">
+          {/* Subtle radial glow */}
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background:
+                "radial-gradient(ellipse at 70% 50%, oklch(0.65 0.10 290 / 0.35) 0%, transparent 60%)",
+            }}
+          />
+
+          <div className="relative flex flex-col md:flex-row items-stretch">
+            {/* Text side */}
+            <div className="flex-1 p-7 md:p-10 flex flex-col justify-center gap-4">
+              <div className="inline-flex items-center gap-2 w-fit">
+                <span className="w-5 h-px bg-sidebar-primary" />
+                <p className="text-xs font-medium tracking-widest uppercase text-sidebar-primary">
+                  Signature Collection
+                </p>
+              </div>
+
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-sidebar-foreground leading-tight">
+                Artisan
+                <br />
+                <em className="italic font-normal">Chocolate Truffles</em>
+              </h2>
+
+              <p className="text-sm text-sidebar-foreground/70 leading-relaxed max-w-xs">
+                Handcrafted with premium cocoa and finished with gold leaf — the
+                jewel of every gift box and your signature bestseller.
+              </p>
+
+              <Button
+                size="sm"
+                data-ocid="dashboard.truffles.button"
+                onClick={() => navigate({ to: "/products" })}
+                className="w-fit mt-1 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 font-medium tracking-wide"
+              >
+                View Products
+              </Button>
+            </div>
+
+            {/* Image side */}
+            <div className="relative md:w-72 lg:w-80 h-52 md:h-auto flex-shrink-0 overflow-hidden">
+              <img
+                src="/assets/generated/truffle-chocolates.dim_600x400.jpg"
+                alt="Signature chocolate truffles"
+                className="w-full h-full object-cover"
+                style={{ minHeight: "200px" }}
+              />
+              {/* Gradient fade on left edge for desktop */}
+              <div
+                className="hidden md:block absolute inset-y-0 left-0 w-16"
+                style={{
+                  background:
+                    "linear-gradient(to right, oklch(0.18 0.065 148), transparent)",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Stats Grid */}
       <section className="mb-10">

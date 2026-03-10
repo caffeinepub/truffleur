@@ -8,7 +8,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -81,15 +80,20 @@ export default function Clients() {
               Add Client
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="font-display text-2xl">
                 New Client
               </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-2">
-              <ClientForm onSuccess={() => setAddOpen(false)} />
-            </ScrollArea>
+            <div
+              className="overflow-y-auto flex-1 pr-1"
+              style={{ maxHeight: "calc(90dvh - 80px)" }}
+            >
+              <div className="pb-4">
+                <ClientForm onSuccess={() => setAddOpen(false)} />
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </header>
@@ -284,18 +288,23 @@ function ClientDetail({
               <ShoppingBag className="w-4 h-4" /> Add Order
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="font-display text-2xl">
                 New Order
               </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-2">
-              <OrderForm
-                defaultClientName={`${client.firstName} ${client.lastName}`}
-                onSuccess={() => setAddOrderOpen(false)}
-              />
-            </ScrollArea>
+            <div
+              className="overflow-y-auto flex-1 pr-1"
+              style={{ maxHeight: "calc(90dvh - 80px)" }}
+            >
+              <div className="pb-4">
+                <OrderForm
+                  defaultClientName={`${client.firstName} ${client.lastName}`}
+                  onSuccess={() => setAddOrderOpen(false)}
+                />
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

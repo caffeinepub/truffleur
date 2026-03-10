@@ -1,4 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap');
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('/assets/fonts/PlayfairDisplay-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('/assets/fonts/PlayfairDisplay-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/assets/fonts/GeneralSans-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
@@ -6,61 +28,61 @@
 
 @layer base {
   :root {
-    /* Cream / beige background */
-    --background: 0.965 0.012 82;
-    --foreground: 0.22 0.04 46;
+    /* Soft lavender-white background */
+    --background: 0.965 0.010 285;
+    --foreground: 0.20 0.045 270;
 
-    /* Card: warm white */
-    --card: 0.99 0.007 78;
-    --card-foreground: 0.22 0.04 46;
+    /* Card: clean white with lavender tint */
+    --card: 0.99 0.006 285;
+    --card-foreground: 0.20 0.045 270;
 
     /* Popover */
-    --popover: 0.99 0.007 78;
-    --popover-foreground: 0.22 0.04 46;
+    --popover: 0.99 0.006 285;
+    --popover-foreground: 0.20 0.045 270;
 
-    /* Primary: blush rose */
-    --primary: 0.68 0.11 22;
-    --primary-foreground: 0.99 0.005 78;
+    /* Primary: sage green */
+    --primary: 0.52 0.13 148;
+    --primary-foreground: 0.99 0.005 285;
 
-    /* Secondary: warm cream */
-    --secondary: 0.93 0.025 78;
-    --secondary-foreground: 0.28 0.04 46;
+    /* Secondary: soft sage tint */
+    --secondary: 0.92 0.025 148;
+    --secondary-foreground: 0.26 0.045 148;
 
     /* Muted */
-    --muted: 0.95 0.015 78;
-    --muted-foreground: 0.50 0.035 46;
+    --muted: 0.94 0.015 285;
+    --muted-foreground: 0.50 0.035 270;
 
-    /* Accent: soft blush tint */
-    --accent: 0.90 0.06 22;
-    --accent-foreground: 0.28 0.04 46;
+    /* Accent: soft lavender */
+    --accent: 0.88 0.055 290;
+    --accent-foreground: 0.28 0.045 270;
 
     /* Destructive */
     --destructive: 0.55 0.20 25;
-    --destructive-foreground: 0.99 0.005 78;
+    --destructive-foreground: 0.99 0.005 285;
 
     /* Border / Input */
-    --border: 0.88 0.025 72;
-    --input: 0.88 0.025 72;
-    --ring: 0.68 0.11 22;
+    --border: 0.87 0.022 280;
+    --input: 0.87 0.022 280;
+    --ring: 0.52 0.13 148;
 
     --radius: 0.5rem;
 
-    /* Sidebar: dark taupe */
-    --sidebar: 0.24 0.04 46;
-    --sidebar-foreground: 0.95 0.012 78;
-    --sidebar-primary: 0.78 0.09 22;
-    --sidebar-primary-foreground: 0.22 0.04 46;
-    --sidebar-accent: 0.32 0.05 46;
-    --sidebar-accent-foreground: 0.95 0.012 78;
-    --sidebar-border: 0.30 0.04 46;
-    --sidebar-ring: 0.78 0.09 22;
+    /* Sidebar: deep forest green — high contrast for bottom nav */
+    --sidebar: 0.18 0.065 148;
+    --sidebar-foreground: 0.96 0.010 285;
+    --sidebar-primary: 0.82 0.10 290;
+    --sidebar-primary-foreground: 0.18 0.065 148;
+    --sidebar-accent: 0.26 0.075 148;
+    --sidebar-accent-foreground: 0.96 0.010 285;
+    --sidebar-border: 0.25 0.06 148;
+    --sidebar-ring: 0.82 0.10 290;
 
     /* Charts */
-    --chart-1: 0.68 0.11 22;
-    --chart-2: 0.75 0.08 55;
-    --chart-3: 0.60 0.09 38;
-    --chart-4: 0.82 0.06 78;
-    --chart-5: 0.50 0.07 22;
+    --chart-1: 0.52 0.13 148;
+    --chart-2: 0.65 0.10 290;
+    --chart-3: 0.55 0.12 165;
+    --chart-4: 0.78 0.08 280;
+    --chart-5: 0.42 0.09 148;
   }
 }
 
@@ -71,7 +93,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'General Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -90,11 +112,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.78 0.04 46);
+  background: oklch(0.72 0.06 148);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.60 0.06 46);
+  background: oklch(0.55 0.09 148);
 }
 
 /* Grain texture overlay */

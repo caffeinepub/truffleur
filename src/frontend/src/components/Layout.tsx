@@ -107,14 +107,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 group ${
                   isActive
                     ? "bg-sidebar-accent text-sidebar-foreground"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 }`}
               >
                 <item.icon
                   className={`w-4 h-4 transition-colors ${
                     isActive
                       ? "text-sidebar-primary"
-                      : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+                      : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"
                   }`}
                 />
                 {item.label}
@@ -143,7 +143,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-sidebar border-t border-sidebar-border">
+      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-sidebar border-t-2 border-sidebar-primary/30">
         <div className="flex items-stretch">
           {primaryNavItems.map((item) => {
             const isActive =
@@ -155,10 +155,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 data-ocid={item.ocid}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[56px] transition-colors ${
-                  isActive
-                    ? "text-sidebar-primary"
-                    : "text-sidebar-foreground/50"
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors ${
+                  isActive ? "text-sidebar-primary" : "text-white/80"
                 }`}
               >
                 <item.icon className="w-5 h-5" />
@@ -174,12 +172,12 @@ export default function Layout({ children }: { children: ReactNode }) {
             type="button"
             data-ocid="nav.more.button"
             onClick={() => setMoreOpen(true)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[56px] transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors ${
               secondaryNavItems.some((item) =>
                 location.pathname.startsWith(item.to),
               )
                 ? "text-sidebar-primary"
-                : "text-sidebar-foreground/50"
+                : "text-white/80"
             }`}
           >
             <MoreHorizontal className="w-5 h-5" />
@@ -212,14 +210,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                   className={`flex items-center gap-4 px-4 py-4 rounded-xl text-sm font-medium transition-all ${
                     isActive
                       ? "bg-sidebar-accent text-sidebar-foreground"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50"
                   }`}
                 >
                   <item.icon
                     className={`w-5 h-5 ${
                       isActive
                         ? "text-sidebar-primary"
-                        : "text-sidebar-foreground/40"
+                        : "text-sidebar-foreground/70"
                     }`}
                   />
                   {item.label}
