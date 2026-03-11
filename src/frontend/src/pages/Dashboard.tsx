@@ -152,7 +152,7 @@ export default function Dashboard() {
       <header className="mb-8">
         <div className="flex items-center gap-4">
           <img
-            src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
+            src="/assets/uploads/generated/truffleur-logo-v2.dim_600x200.png"
             alt="Truffleur"
             className="h-16 w-auto object-contain rounded-xl"
             style={{
@@ -178,7 +178,7 @@ export default function Dashboard() {
           className="relative overflow-hidden rounded-2xl shadow-elevated"
           style={{
             backgroundImage:
-              "url('/assets/generated/banner-picnic-joy.dim_1400x500.jpg')",
+              "url('/assets/generated/banner-picnic-joy-v2.dim_1400x500.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center 30%",
             minHeight: "150px",
