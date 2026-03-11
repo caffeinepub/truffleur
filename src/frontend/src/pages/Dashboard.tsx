@@ -172,14 +172,14 @@ export default function Dashboard() {
         </p>
       </header>
 
-      {/* Signature Truffles Feature Card — vivid lavender & green */}
+      {/* Signature Truffles Feature Card — vivid spring colors */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
           className="relative overflow-hidden rounded-2xl shadow-elevated"
           style={{
             background:
               "linear-gradient(135deg, oklch(0.30 0.14 148) 0%, oklch(0.38 0.16 148) 30%, oklch(0.55 0.18 290) 65%, oklch(0.45 0.20 290) 100%)",
-            minHeight: "220px",
+            minHeight: "140px",
           }}
         >
           {/* Decorative blurred blobs */}
@@ -209,8 +209,8 @@ export default function Dashboard() {
           <div className="relative flex flex-col md:flex-row items-stretch">
             {/* Button side */}
             <div
-              className="flex-1 flex items-center justify-center md:justify-start p-8 md:p-12"
-              style={{ minHeight: "180px" }}
+              className="flex-1 flex items-center justify-center md:justify-start p-5 md:p-8"
+              style={{ minHeight: "140px" }}
             >
               <Button
                 size="default"
@@ -235,15 +235,14 @@ export default function Dashboard() {
             </div>
 
             {/* Image side */}
-            <div className="relative md:w-72 lg:w-80 h-52 md:h-auto flex-shrink-0 overflow-hidden">
+            <div className="relative md:w-72 lg:w-80 h-36 md:h-auto flex-shrink-0 overflow-hidden">
               <img
-                src="/assets/generated/truffle-chocolates.dim_600x400.jpg"
-                alt="Signature chocolate truffles"
+                src="/assets/generated/truffle-spring-banner.dim_900x300.jpg"
+                alt="Spring chocolate truffles with flowers"
                 className="w-full h-full object-cover"
                 style={{
-                  minHeight: "200px",
-                  opacity: 0.55,
-                  mixBlendMode: "luminosity",
+                  minHeight: "140px",
+                  opacity: 0.85,
                 }}
               />
               {/* Strong left-edge fade into banner gradient */}
