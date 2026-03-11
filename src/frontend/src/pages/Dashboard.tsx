@@ -148,75 +148,73 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
-      {/* Header */}
+      {/* Header — logo replaces greeting text */}
       <header className="mb-8">
-        <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">
-          Good {getGreeting()}
-        </p>
-        <h1 className="font-display text-4xl font-semibold text-foreground leading-tight">
-          Business Overview
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          {new Date().toLocaleDateString("en-GB", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
+        <div className="flex items-center gap-4">
+          <img
+            src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
+            alt="Truffleur"
+            className="h-16 w-auto object-contain rounded-xl"
+            style={{
+              maxWidth: "200px",
+              filter:
+                "drop-shadow(0 4px 12px rgba(255,185,60,0.5)) drop-shadow(0 1px 3px rgba(0,0,0,0.18)) brightness(1.05) saturate(1.15)",
+            }}
+          />
+          <div>
+            <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">
+              {new Date().toLocaleDateString("en-GB", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+        </div>
       </header>
 
-      {/* Compact banner — View Products with truffle image background */}
+      {/* Banner — flower garden background, View Products button with bold Playfair Display font */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
           className="relative overflow-hidden rounded-2xl shadow-elevated"
           style={{
-            background:
-              "linear-gradient(135deg, oklch(0.30 0.14 148) 0%, oklch(0.38 0.16 148) 30%, oklch(0.55 0.18 290) 65%, oklch(0.45 0.20 290) 100%)",
-            minHeight: "70px",
+            backgroundImage:
+              "url('/assets/generated/flower-garden-banner.dim_900x280.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center 40%",
+            minHeight: "120px",
           }}
         >
-          {/* Decorative blurred blobs */}
+          {/* Subtle dark vignette for readability — no shapes */}
           <div
-            className="absolute -bottom-10 -left-10 w-56 h-56 rounded-full pointer-events-none"
+            className="absolute inset-0"
             style={{
-              background: "oklch(0.55 0.20 148 / 0.45)",
-              filter: "blur(48px)",
-            }}
-          />
-          <div
-            className="absolute -top-10 -right-10 w-64 h-64 rounded-full pointer-events-none"
-            style={{
-              background: "oklch(0.72 0.22 290 / 0.50)",
-              filter: "blur(56px)",
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.28) 100%)",
             }}
           />
 
-          {/* Button centred in the compact banner */}
-          <div
-            className="relative flex items-center justify-center p-4"
-            style={{ minHeight: "70px" }}
-          >
+          {/* Button centred in the banner */}
+          <div className="relative flex items-center justify-center py-8">
             <button
               type="button"
               data-ocid="dashboard.truffles.button"
               onClick={() => navigate({ to: "/products" })}
-              className="relative overflow-hidden rounded-xl shadow-lg font-semibold tracking-wide text-white transition-all duration-200 px-10 py-4 hover:scale-105"
+              className="relative overflow-hidden rounded-xl shadow-lg text-white transition-all duration-200 hover:scale-105 hover:shadow-2xl px-10 py-4"
               style={{
-                backgroundImage:
-                  "url('/assets/generated/truffle-spring-banner.dim_900x300.jpg')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontWeight: 700,
+                fontSize: "1.15rem",
+                letterSpacing: "0.06em",
+                background: "rgba(20, 10, 5, 0.52)",
+                backdropFilter: "blur(6px)",
+                border: "1.5px solid rgba(255,210,100,0.55)",
+                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
                 minWidth: "220px",
-                fontSize: "0.95rem",
-                letterSpacing: "0.08em",
               }}
             >
-              <div
-                className="absolute inset-0 rounded-xl"
-                style={{ background: "oklch(0.18 0.06 148 / 0.45)" }}
-              />
-              <span className="relative z-10">View Products</span>
+              View Products
             </button>
           </div>
         </div>
@@ -259,7 +257,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Quick Actions — 4 columns, 2 per row on mobile */}
+      {/* Quick Actions */}
       <section>
         <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-5">
           Quick Actions
@@ -337,13 +335,6 @@ export default function Dashboard() {
       )}
     </div>
   );
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Morning";
-  if (h < 18) return "Afternoon";
-  return "Evening";
 }
 
 export function StatusBadge({ status }: { status: string }) {

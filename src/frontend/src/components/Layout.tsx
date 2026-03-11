@@ -86,8 +86,12 @@ export default function Layout({ children }: { children: ReactNode }) {
             <img
               src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
               alt="Truffleur"
-              className="h-10 w-auto object-contain"
-              style={{ filter: "brightness(0) invert(1)", maxWidth: "160px" }}
+              className="h-12 w-auto object-contain rounded-lg"
+              style={{
+                maxWidth: "160px",
+                filter:
+                  "drop-shadow(0 2px 8px rgba(255,200,80,0.45)) brightness(1.1) saturate(1.2)",
+              }}
             />
             {/* Lock button */}
             <button
@@ -200,7 +204,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
-      {/* More Sheet (mobile) — uses dashboard light theme */}
+      {/* More Sheet (mobile) */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
@@ -249,7 +253,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 caffeine.ai
               </a>
             </p>
-            {/* Mobile lock button */}
             <button
               type="button"
               data-ocid="layout.lock_button"
