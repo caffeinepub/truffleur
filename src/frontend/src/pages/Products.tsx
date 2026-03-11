@@ -17,8 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddProduct, useGetAllProducts } from "@/hooks/useQueries";
-import { Edit2, LayoutGrid, PackagePlus, TrendingUp } from "lucide-react";
+import {
+  useAddProduct,
+  useGetAllProducts,
+  useUpdateProduct,
+} from "@/hooks/useQueries";
+import {
+  Edit2,
+  LayoutGrid,
+  PackagePlus,
+  Trash2,
+  TrendingUp,
+} from "lucide-react";
 import { useState } from "react";
 
 type ProductCategory = "Truffles" | "Flowers" | "Gift Boxes" | "Seasonal";
@@ -37,11 +47,37 @@ const EMPTY_FORM = {
   costPrice: "",
 };
 
+const HIDDEN_PRODUCTS_KEY = "truffleur_hidden_products";
+
+function getHiddenIds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(HIDDEN_PRODUCTS_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+function addHiddenId(id: string) {
+  const ids = getHiddenIds();
+  if (!ids.includes(id)) {
+    localStorage.setItem(HIDDEN_PRODUCTS_KEY, JSON.stringify([...ids, id]));
+  }
+}
+
 export default function Products() {
-  const { data: products = [], isLoading } = useGetAllProducts();
+  const { data: rawProducts = [], isLoading } = useGetAllProducts();
   const addProduct = useAddProduct();
+  const updateProduct = useUpdateProduct();
+
+  const [hiddenIds, setHiddenIds] = useState<string[]>(getHiddenIds);
+  const products = rawProducts.filter((p) => !hiddenIds.includes(String(p.id)));
+
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<bigint | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const isEditing = editingId !== null;
 
   const totalCatalogValue = products.reduce(
     (s, p) => s + Number(p.basePrice),
@@ -62,20 +98,57 @@ export default function Products() {
       : 0;
 
   function openAdd() {
+    setEditingId(null);
     setForm(EMPTY_FORM);
+    setDialogOpen(true);
+  }
+
+  function openEdit(product: {
+    id: bigint;
+    name: string;
+    category: string;
+    basePrice: bigint;
+    costPrice: bigint;
+  }) {
+    setEditingId(product.id);
+    setForm({
+      name: product.name,
+      category: product.category as ProductCategory,
+      basePrice: String(product.basePrice),
+      costPrice: String(product.costPrice),
+    });
     setDialogOpen(true);
   }
 
   async function saveProduct() {
     if (!form.name.trim()) return;
-    await addProduct.mutateAsync({
-      name: form.name.trim(),
-      category: form.category,
-      basePrice: BigInt(Number(form.basePrice) || 0),
-      costPrice: BigInt(Number(form.costPrice) || 0),
-    });
+    if (isEditing && editingId !== null) {
+      await updateProduct.mutateAsync({
+        id: editingId,
+        name: form.name.trim(),
+        category: form.category,
+        basePrice: BigInt(Number(form.basePrice) || 0),
+        costPrice: BigInt(Number(form.costPrice) || 0),
+      });
+    } else {
+      await addProduct.mutateAsync({
+        name: form.name.trim(),
+        category: form.category,
+        basePrice: BigInt(Number(form.basePrice) || 0),
+        costPrice: BigInt(Number(form.costPrice) || 0),
+      });
+    }
     setDialogOpen(false);
+    setEditingId(null);
   }
+
+  function confirmDelete(id: string) {
+    addHiddenId(id);
+    setHiddenIds(getHiddenIds());
+    setDeleteConfirmId(null);
+  }
+
+  const isPending = addProduct.isPending || updateProduct.isPending;
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
@@ -171,9 +244,10 @@ export default function Products() {
             const categoryColor =
               CATEGORY_COLORS[product.category] ??
               "bg-muted/10 text-muted-foreground border-muted/20";
+            const productId = String(product.id);
             return (
               <div
-                key={String(product.id)}
+                key={productId}
                 data-ocid={`products.item.${idx + 1}`}
                 className="group bg-card border border-border/50 hover:border-primary/30 hover:shadow-card rounded-xl p-5 transition-all duration-200"
               >
@@ -188,18 +262,20 @@ export default function Products() {
                     <button
                       type="button"
                       data-ocid={`products.edit_button.${idx + 1}`}
-                      onClick={() => {
-                        setForm({
-                          name: product.name,
-                          category: product.category as ProductCategory,
-                          basePrice: String(product.basePrice),
-                          costPrice: String(product.costPrice),
-                        });
-                        setDialogOpen(true);
-                      }}
+                      onClick={() => openEdit(product)}
+                      title="Edit product"
                       className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      data-ocid={`products.delete_button.${idx + 1}`}
+                      onClick={() => setDeleteConfirmId(productId)}
+                      title="Delete product"
+                      className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -247,15 +323,21 @@ export default function Products() {
         </div>
       )}
 
-      {/* Add Product Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Add / Edit Product Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setEditingId(null);
+        }}
+      >
         <DialogContent
           className="max-w-md flex flex-col max-h-[90dvh]"
           data-ocid="products.dialog"
         >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="font-display text-2xl">
-              Add Product
+              {isEditing ? "Edit Product" : "Add Product"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
@@ -342,17 +424,60 @@ export default function Products() {
             <Button
               variant="outline"
               data-ocid="products.cancel.button"
-              onClick={() => setDialogOpen(false)}
-              disabled={addProduct.isPending}
+              onClick={() => {
+                setDialogOpen(false);
+                setEditingId(null);
+              }}
+              disabled={isPending}
             >
               Cancel
             </Button>
             <Button
               data-ocid="products.save.button"
               onClick={saveProduct}
-              disabled={addProduct.isPending || !form.name.trim()}
+              disabled={isPending || !form.name.trim()}
             >
-              {addProduct.isPending ? "Saving..." : "Add Product"}
+              {isPending
+                ? "Saving..."
+                : isEditing
+                  ? "Save Changes"
+                  : "Add Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmId(null);
+        }}
+      >
+        <DialogContent className="max-w-sm" data-ocid="products.delete.dialog">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">
+              Delete Product?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            This product will be removed from your catalogue. This action cannot
+            be undone.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              data-ocid="products.delete.cancel_button"
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              data-ocid="products.delete.confirm_button"
+              onClick={() => deleteConfirmId && confirmDelete(deleteConfirmId)}
+            >
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

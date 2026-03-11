@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Products from "./pages/Products";
 import Reports from "./pages/Reports";
+import Suppliers from "./pages/Suppliers";
 import Vip from "./pages/Vip";
 
 const rootRoute = createRootRoute({
@@ -63,6 +64,12 @@ const productsRoute = createRoute({
   component: Products,
 });
 
+const suppliersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/suppliers",
+  component: Suppliers,
+});
+
 const reportsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/reports",
@@ -76,6 +83,7 @@ const routeTree = rootRoute.addChildren([
   vipRoute,
   calendarRoute,
   productsRoute,
+  suppliersRoute,
   reportsRoute,
 ]);
 

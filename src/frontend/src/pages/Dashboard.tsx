@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import {
   BarChart3,
+  Building2,
   CalendarDays,
   Crown,
   LayoutGrid,
@@ -93,6 +94,11 @@ export default function Dashboard() {
     },
   ];
 
+  // Quick actions arranged in pairs as requested:
+  // Add Client | Add Order
+  // VIP Client | Today's Orders
+  // Reports    | Calendar
+  // Suppliers  | Products
   const quickActions = [
     {
       label: "Add Client",
@@ -108,23 +114,23 @@ export default function Dashboard() {
         navigate({ to: "/orders", search: { highlight: undefined } }),
     },
     {
-      label: "Today's Deliveries",
-      icon: Truck,
-      ocid: "dashboard.deliveries.button",
-      onClick: () =>
-        navigate({ to: "/orders", search: { highlight: undefined } }),
-    },
-    {
       label: "VIP Clients",
       icon: Crown,
       ocid: "dashboard.vip.button",
       onClick: () => navigate({ to: "/vip" }),
     },
     {
-      label: "Products",
-      icon: LayoutGrid,
-      ocid: "dashboard.products.button",
-      onClick: () => navigate({ to: "/products" }),
+      label: "Today's Orders",
+      icon: ShoppingBag,
+      ocid: "dashboard.todays_orders.button",
+      onClick: () =>
+        navigate({ to: "/orders", search: { highlight: undefined } }),
+    },
+    {
+      label: "Reports",
+      icon: BarChart3,
+      ocid: "dashboard.reports.button",
+      onClick: () => navigate({ to: "/reports" }),
     },
     {
       label: "Calendar",
@@ -133,10 +139,16 @@ export default function Dashboard() {
       onClick: () => navigate({ to: "/calendar" }),
     },
     {
-      label: "Reports",
-      icon: BarChart3,
-      ocid: "dashboard.reports.button",
-      onClick: () => navigate({ to: "/reports" }),
+      label: "Suppliers",
+      icon: Building2,
+      ocid: "dashboard.suppliers.button",
+      onClick: () => navigate({ to: "/suppliers" }),
+    },
+    {
+      label: "Products",
+      icon: LayoutGrid,
+      ocid: "dashboard.products.button",
+      onClick: () => navigate({ to: "/products" }),
     },
   ];
 
@@ -292,7 +304,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Quick Actions */}
+      {/* Quick Actions — 4 columns, 2 per row on mobile */}
       <section>
         <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-5">
           Quick Actions

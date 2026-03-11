@@ -50,6 +50,7 @@ export interface backendInterface {
     addOrder(clientId: bigint, clientName: string, productName: string, quantity: bigint, occasion: string, deliveryDate: string, deliveryAddress: string, isPickup: boolean, price: bigint, deposit: bigint, status: string, notes: string, createdAt: bigint): Promise<bigint>;
     updateOrder(id: bigint, clientId: bigint, clientName: string, productName: string, quantity: bigint, occasion: string, deliveryDate: string, deliveryAddress: string, isPickup: boolean, price: bigint, deposit: bigint, status: string, notes: string): Promise<boolean>;
     addProduct(name: string, category: string, basePrice: bigint, costPrice: bigint): Promise<bigint>;
+    updateProduct(id: bigint, name: string, category: string, basePrice: bigint, costPrice: bigint): Promise<boolean>;
     getAllClients(): Promise<Array<Client>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllProducts(): Promise<Array<Product>>;

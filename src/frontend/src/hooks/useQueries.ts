@@ -223,3 +223,29 @@ export function useAddProduct() {
     },
   });
 }
+
+export function useUpdateProduct() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      id: bigint;
+      name: string;
+      category: string;
+      basePrice: bigint;
+      costPrice: bigint;
+    }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.updateProduct(
+        data.id,
+        data.name,
+        data.category,
+        data.basePrice,
+        data.costPrice,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}

@@ -7,6 +7,7 @@ import {
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   BarChart3,
+  Building2,
   CalendarDays,
   Crown,
   Gem,
@@ -36,14 +37,20 @@ const primaryNavItems = [
     ocid: "nav.orders.link",
   },
   {
+    to: "/reports",
+    label: "Reports",
+    icon: BarChart3,
+    ocid: "nav.reports.link",
+  },
+];
+
+const secondaryNavItems = [
+  {
     to: "/vip",
     label: "VIP",
     icon: Crown,
     ocid: "nav.vip.link",
   },
-];
-
-const secondaryNavItems = [
   {
     to: "/calendar",
     label: "Calendar",
@@ -57,10 +64,10 @@ const secondaryNavItems = [
     ocid: "nav.products.link",
   },
   {
-    to: "/reports",
-    label: "Reports",
-    icon: BarChart3,
-    ocid: "nav.reports.link",
+    to: "/suppliers",
+    label: "Suppliers",
+    icon: Building2,
+    ocid: "nav.suppliers.link",
   },
 ];
 
@@ -199,15 +206,15 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
-      {/* More Sheet (mobile) */}
+      {/* More Sheet (mobile) — uses dashboard light theme */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="bg-sidebar border-sidebar-border rounded-t-2xl pb-safe"
+          className="bg-background border-border rounded-t-2xl pb-safe"
           data-ocid="nav.more.sheet"
         >
           <SheetHeader className="mb-4">
-            <SheetTitle className="font-display text-sidebar-foreground text-lg tracking-wider uppercase">
+            <SheetTitle className="font-display text-foreground text-lg tracking-wider uppercase">
               More
             </SheetTitle>
           </SheetHeader>
@@ -222,15 +229,13 @@ export default function Layout({ children }: { children: ReactNode }) {
                   onClick={() => setMoreOpen(false)}
                   className={`flex items-center gap-4 px-4 py-4 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50"
+                      ? "bg-accent text-foreground"
+                      : "text-foreground/70 hover:bg-accent/50 hover:text-foreground"
                   }`}
                 >
                   <item.icon
                     className={`w-5 h-5 ${
-                      isActive
-                        ? "text-sidebar-primary"
-                        : "text-sidebar-foreground/70"
+                      isActive ? "text-primary" : "text-muted-foreground"
                     }`}
                   />
                   {item.label}
@@ -239,13 +244,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             })}
           </div>
           <div className="flex items-center justify-between pb-2">
-            <p className="text-xs text-sidebar-foreground/30">
+            <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()}. Built with love using{" "}
               <a
                 href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline underline-offset-2"
+                className="underline underline-offset-2 hover:text-foreground/60 transition-colors"
               >
                 caffeine.ai
               </a>
@@ -255,11 +260,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               type="button"
               data-ocid="layout.lock_button"
               onClick={lockApp}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all opacity-60 hover:opacity-100"
-              style={{
-                color: "oklch(0.72 0.12 295)",
-                border: "1px solid oklch(0.72 0.12 295 / 0.3)",
-              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-primary border border-primary/30 hover:bg-primary/10"
             >
               <Lock className="w-3 h-3" />
               Lock
