@@ -9,7 +9,7 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/assets/generated/truffleur-icon-new.dim_512x512.png",
+      "src": "/assets/generated/app-icon-truffleur.dim_512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

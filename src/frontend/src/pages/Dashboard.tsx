@@ -148,53 +148,43 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
-      {/* Header — logo + Truffleur name for clear visibility */}
+      {/* Header — logo only, no redundant text */}
       <header className="mb-8">
         <div className="flex items-center gap-4">
           <img
             src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
             alt="Truffleur"
-            className="h-14 w-auto object-contain rounded-xl"
-            style={{ maxWidth: "160px" }}
+            className="h-16 w-auto object-contain rounded-xl"
+            style={{
+              maxWidth: "180px",
+              filter:
+                "drop-shadow(0 2px 12px rgba(200,60,60,0.3)) brightness(1.05) saturate(1.15)",
+            }}
           />
-          <div>
-            <h1
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontWeight: 800,
-                fontSize: "1.7rem",
-                letterSpacing: "0.04em",
-                color: "var(--foreground)",
-                lineHeight: 1.1,
-              }}
-            >
-              Truffleur
-            </h1>
-            <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mt-0.5">
-              {new Date().toLocaleDateString("en-GB", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
+          <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground ml-1">
+            {new Date().toLocaleDateString("en-GB", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
         </div>
       </header>
 
-      {/* Banner — soft picnic flower field, no shapes, View Products text floats naturally */}
+      {/* Banner — joyful picnic in a flower field */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
           className="relative overflow-hidden rounded-2xl shadow-elevated"
           style={{
             backgroundImage:
-              "url('/assets/generated/banner-garden-picnic.dim_1200x400.jpg')",
+              "url('/assets/generated/banner-picnic-joy.dim_1400x500.jpg')",
             backgroundSize: "cover",
-            backgroundPosition: "center 35%",
-            minHeight: "130px",
+            backgroundPosition: "center 30%",
+            minHeight: "150px",
           }}
         >
-          {/* Very light vignette — just enough contrast, no heavy shapes */}
+          {/* Soft vignette to keep text readable */}
           <div
             className="absolute inset-0"
             style={{
@@ -203,8 +193,8 @@ export default function Dashboard() {
             }}
           />
 
-          {/* View Products — white bold text, no dark box, blends with field */}
-          <div className="relative flex items-center justify-center py-9">
+          {/* View Products — thin elegant text floating over image */}
+          <div className="relative flex items-center justify-center py-11">
             <button
               type="button"
               data-ocid="dashboard.truffles.button"
@@ -212,16 +202,17 @@ export default function Dashboard() {
               className="transition-all duration-200 hover:scale-105"
               style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
-                fontWeight: 800,
-                fontSize: "1.25rem",
-                letterSpacing: "0.1em",
-                color: "#ffffff",
+                fontWeight: 300,
+                fontStyle: "italic",
+                fontSize: "1.15rem",
+                letterSpacing: "0.2em",
+                color: "rgba(255, 252, 230, 0.95)",
                 background: "transparent",
                 border: "none",
                 padding: "0",
                 cursor: "pointer",
                 textShadow:
-                  "0 1px 8px rgba(0,0,0,0.55), 0 0px 2px rgba(0,0,0,0.8)",
+                  "0 1px 8px rgba(0,0,0,0.45), 0 0px 2px rgba(0,0,0,0.5)",
               }}
             >
               View Products
