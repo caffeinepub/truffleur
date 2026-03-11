@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Client, Order } from "../backend.d";
+import type { Client, Order, Product } from "../backend.d";
 import { useActor } from "./useActor";
 
 export function useGetAllClients() {
@@ -21,6 +21,18 @@ export function useGetAllOrders() {
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllOrders();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetAllProducts() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Product[]>({
+    queryKey: ["products"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllProducts();
     },
     enabled: !!actor && !isFetching,
   });
@@ -184,6 +196,30 @@ export function useUpdateOrder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useAddProduct() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      name: string;
+      category: string;
+      basePrice: bigint;
+      costPrice: bigint;
+    }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.addProduct(
+        data.name,
+        data.category,
+        data.basePrice,
+        data.costPrice,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 }

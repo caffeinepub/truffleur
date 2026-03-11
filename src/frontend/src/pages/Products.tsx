@@ -17,93 +17,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Edit2,
-  LayoutGrid,
-  PackagePlus,
-  Trash2,
-  TrendingUp,
-} from "lucide-react";
+import { useAddProduct, useGetAllProducts } from "@/hooks/useQueries";
+import { Edit2, LayoutGrid, PackagePlus, TrendingUp } from "lucide-react";
 import { useState } from "react";
 
 type ProductCategory = "Truffles" | "Flowers" | "Gift Boxes" | "Seasonal";
 
-interface Product {
-  id: number;
-  name: string;
-  category: ProductCategory;
-  price: number;
-  cost: number;
-  stock: number;
-}
-
-const CATEGORY_COLORS: Record<ProductCategory, string> = {
+const CATEGORY_COLORS: Record<string, string> = {
   Truffles: "bg-chart-1/10 text-chart-1 border-chart-1/20",
   Flowers: "bg-chart-2/10 text-chart-2 border-chart-2/20",
   "Gift Boxes": "bg-chart-5/10 text-chart-5 border-chart-5/20",
   Seasonal: "bg-chart-3/10 text-chart-3 border-chart-3/20",
 };
 
-const EMPTY_FORM: Omit<Product, "id"> = {
+const EMPTY_FORM = {
   name: "",
-  category: "Truffles",
-  price: 0,
-  cost: 0,
-  stock: 0,
+  category: "Truffles" as ProductCategory,
+  basePrice: "",
+  costPrice: "",
 };
 
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { data: products = [], isLoading } = useGetAllProducts();
+  const addProduct = useAddProduct();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState<Omit<Product, "id">>(EMPTY_FORM);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  const totalCatalogValue = products.reduce((s, p) => s + p.price * p.stock, 0);
+  const totalCatalogValue = products.reduce(
+    (s, p) => s + Number(p.basePrice),
+    0,
+  );
   const avgMargin =
     products.length > 0
-      ? products.reduce((s, p) => s + ((p.price - p.cost) / p.price) * 100, 0) /
-        products.length
+      ? products.reduce(
+          (s, p) =>
+            s +
+            (Number(p.basePrice) > 0
+              ? ((Number(p.basePrice) - Number(p.costPrice)) /
+                  Number(p.basePrice)) *
+                100
+              : 0),
+          0,
+        ) / products.length
       : 0;
 
   function openAdd() {
-    setEditingProduct(null);
     setForm(EMPTY_FORM);
     setDialogOpen(true);
   }
 
-  function openEdit(p: Product) {
-    setEditingProduct(p);
-    setForm({
-      name: p.name,
-      category: p.category,
-      price: p.price,
-      cost: p.cost,
-      stock: p.stock,
-    });
-    setDialogOpen(true);
-  }
-
-  function saveProduct() {
+  async function saveProduct() {
     if (!form.name.trim()) return;
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id ? { ...editingProduct, ...form } : p,
-        ),
-      );
-    } else {
-      const newId = Math.max(0, ...products.map((p) => p.id)) + 1;
-      setProducts((prev) => [...prev, { id: newId, ...form }]);
-    }
+    await addProduct.mutateAsync({
+      name: form.name.trim(),
+      category: form.category,
+      basePrice: BigInt(Number(form.basePrice) || 0),
+      costPrice: BigInt(Number(form.costPrice) || 0),
+    });
     setDialogOpen(false);
-  }
-
-  function confirmDelete() {
-    if (deleteId !== null) {
-      setProducts((prev) => prev.filter((p) => p.id !== deleteId));
-      setDeleteId(null);
-    }
   }
 
   return (
@@ -173,7 +144,14 @@ export default function Products() {
       </div>
 
       {/* Product grid */}
-      {products.length === 0 ? (
+      {isLoading ? (
+        <div
+          data-ocid="products.loading_state"
+          className="text-center py-20 text-muted-foreground"
+        >
+          <p className="text-sm">Loading products...</p>
+        </div>
+      ) : products.length === 0 ? (
         <div
           data-ocid="products.empty_state"
           className="text-center py-20 text-muted-foreground"
@@ -187,37 +165,41 @@ export default function Products() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product, idx) => {
-            const margin =
-              ((product.price - product.cost) / product.price) * 100;
+            const price = Number(product.basePrice);
+            const cost = Number(product.costPrice);
+            const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+            const categoryColor =
+              CATEGORY_COLORS[product.category] ??
+              "bg-muted/10 text-muted-foreground border-muted/20";
             return (
               <div
-                key={product.id}
+                key={String(product.id)}
                 data-ocid={`products.item.${idx + 1}`}
                 className="group bg-card border border-border/50 hover:border-primary/30 hover:shadow-card rounded-xl p-5 transition-all duration-200"
               >
                 <div className="flex items-start justify-between mb-3">
                   <Badge
                     variant="outline"
-                    className={`text-xs ${CATEGORY_COLORS[product.category]}`}
+                    className={`text-xs ${categoryColor}`}
                   >
                     {product.category}
                   </Badge>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1">
                     <button
                       type="button"
                       data-ocid={`products.edit_button.${idx + 1}`}
-                      onClick={() => openEdit(product)}
+                      onClick={() => {
+                        setForm({
+                          name: product.name,
+                          category: product.category as ProductCategory,
+                          basePrice: String(product.basePrice),
+                          costPrice: String(product.costPrice),
+                        });
+                        setDialogOpen(true);
+                      }}
                       className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      data-ocid={`products.delete_button.${idx + 1}`}
-                      onClick={() => setDeleteId(product.id)}
-                      className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -226,13 +208,13 @@ export default function Products() {
                   {product.name}
                 </h3>
 
-                <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
                       Price
                     </p>
                     <p className="text-sm font-semibold text-foreground">
-                      {product.price.toLocaleString()}
+                      {price.toLocaleString()} MKD
                     </p>
                   </div>
                   <div>
@@ -240,17 +222,7 @@ export default function Products() {
                       Cost
                     </p>
                     <p className="text-sm font-semibold text-muted-foreground">
-                      {product.cost.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
-                      Stock
-                    </p>
-                    <p
-                      className={`text-sm font-semibold ${product.stock <= 3 ? "text-destructive" : "text-foreground"}`}
-                    >
-                      {product.stock}
+                      {cost.toLocaleString()} MKD
                     </p>
                   </div>
                 </div>
@@ -275,7 +247,7 @@ export default function Products() {
         </div>
       )}
 
-      {/* Add/Edit Dialog */}
+      {/* Add Product Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
           className="max-w-md flex flex-col max-h-[90dvh]"
@@ -283,7 +255,7 @@ export default function Products() {
         >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="font-display text-2xl">
-              {editingProduct ? "Edit Product" : "Add Product"}
+              Add Product
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
@@ -326,16 +298,16 @@ export default function Products() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="product-price">Price (MKD)</Label>
                 <Input
                   id="product-price"
                   data-ocid="products.price.input"
                   type="number"
-                  value={form.price || ""}
+                  value={form.basePrice}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, price: Number(e.target.value) }))
+                    setForm((f) => ({ ...f, basePrice: e.target.value }))
                   }
                 />
               </div>
@@ -345,30 +317,23 @@ export default function Products() {
                   id="product-cost"
                   data-ocid="products.cost.input"
                   type="number"
-                  value={form.cost || ""}
+                  value={form.costPrice}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, cost: Number(e.target.value) }))
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="product-stock">Stock</Label>
-                <Input
-                  id="product-stock"
-                  data-ocid="products.stock.input"
-                  type="number"
-                  value={form.stock || ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, stock: Number(e.target.value) }))
+                    setForm((f) => ({ ...f, costPrice: e.target.value }))
                   }
                 />
               </div>
             </div>
-            {form.price > 0 && form.cost > 0 && (
+            {Number(form.basePrice) > 0 && Number(form.costPrice) > 0 && (
               <div className="bg-secondary/50 rounded-lg p-3 text-sm">
                 <span className="text-muted-foreground">Profit margin: </span>
                 <span className="font-semibold text-foreground">
-                  {(((form.price - form.cost) / form.price) * 100).toFixed(1)}%
+                  {(
+                    ((Number(form.basePrice) - Number(form.costPrice)) /
+                      Number(form.basePrice)) *
+                    100
+                  ).toFixed(1)}
+                  %
                 </span>
               </div>
             )}
@@ -378,47 +343,16 @@ export default function Products() {
               variant="outline"
               data-ocid="products.cancel.button"
               onClick={() => setDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button data-ocid="products.save.button" onClick={saveProduct}>
-              {editingProduct ? "Save Changes" : "Add Product"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation */}
-      <Dialog
-        open={deleteId !== null}
-        onOpenChange={(o) => {
-          if (!o) setDeleteId(null);
-        }}
-      >
-        <DialogContent className="max-w-sm" data-ocid="products.delete.dialog">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl">
-              Delete Product?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will permanently remove the product from your catalogue. This
-            action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              data-ocid="products.delete.cancel_button"
-              onClick={() => setDeleteId(null)}
+              disabled={addProduct.isPending}
             >
               Cancel
             </Button>
             <Button
-              variant="destructive"
-              data-ocid="products.delete.confirm_button"
-              onClick={confirmDelete}
+              data-ocid="products.save.button"
+              onClick={saveProduct}
+              disabled={addProduct.isPending || !form.name.trim()}
             >
-              Delete
+              {addProduct.isPending ? "Saving..." : "Add Product"}
             </Button>
           </DialogFooter>
         </DialogContent>
