@@ -84,13 +84,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="px-7 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
+              src="/assets/generated/truffleur-logo-v3-transparent.dim_400x200.png"
               alt="Truffleur"
               className="h-12 w-auto object-contain rounded-lg"
               style={{
                 maxWidth: "160px",
-                filter:
-                  "drop-shadow(0 2px 8px rgba(255,200,80,0.45)) brightness(1.1) saturate(1.2)",
+                filter: "brightness(1.05)",
               }}
             />
             {/* Lock button */}

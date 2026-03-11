@@ -152,13 +152,13 @@ export default function Dashboard() {
       <header className="mb-8">
         <div className="flex items-center gap-4">
           <img
-            src="/assets/uploads/generated/truffleur-logo-v2.dim_600x200.png"
+            src="/assets/generated/truffleur-logo-v3-transparent.dim_400x200.png"
             alt="Truffleur"
             className="h-16 w-auto object-contain rounded-xl"
             style={{
               maxWidth: "180px",
               filter:
-                "drop-shadow(0 2px 12px rgba(200,60,60,0.3)) brightness(1.05) saturate(1.15)",
+                "drop-shadow(0 2px 8px rgba(180,150,60,0.3)) brightness(1.05)",
             }}
           />
           <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground ml-1">
