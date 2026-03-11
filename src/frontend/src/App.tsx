@@ -7,6 +7,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import Layout from "./components/Layout";
+import PasswordGate from "./components/PasswordGate";
 import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
 import Dashboard from "./pages/Dashboard";
@@ -88,7 +89,7 @@ declare module "@tanstack/react-router" {
 
 export default function App() {
   return (
-    <>
+    <PasswordGate>
       <RouterProvider router={router} />
       <Toaster
         position="top-right"
@@ -100,6 +101,6 @@ export default function App() {
           },
         }}
       />
-    </>
+    </PasswordGate>
   );
 }

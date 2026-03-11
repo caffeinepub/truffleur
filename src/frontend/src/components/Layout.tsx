@@ -12,12 +12,14 @@ import {
   Gem,
   LayoutDashboard,
   LayoutGrid,
+  Lock,
   MoreHorizontal,
   ShoppingBag,
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { lockApp } from "./PasswordGate";
 
 const primaryNavItems = [
   {
@@ -78,7 +80,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center">
               <Gem className="w-4 h-4 text-sidebar-primary-foreground" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="font-display text-lg font-semibold text-sidebar-foreground tracking-widest uppercase">
                 Truffleur
               </h1>
@@ -86,6 +88,17 @@ export default function Layout({ children }: { children: ReactNode }) {
                 Studio
               </p>
             </div>
+            {/* Lock button */}
+            <button
+              type="button"
+              data-ocid="layout.lock_button"
+              onClick={lockApp}
+              title="Lock app"
+              className="w-7 h-7 rounded-md flex items-center justify-center transition-all hover:bg-sidebar-accent/60 opacity-40 hover:opacity-100"
+              style={{ color: "oklch(0.72 0.12 295)" }}
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -225,17 +238,33 @@ export default function Layout({ children }: { children: ReactNode }) {
               );
             })}
           </div>
-          <p className="text-xs text-sidebar-foreground/30 text-center pb-2">
-            © {new Date().getFullYear()}. Built with love using{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2"
+          <div className="flex items-center justify-between pb-2">
+            <p className="text-xs text-sidebar-foreground/30">
+              © {new Date().getFullYear()}. Built with love using{" "}
+              <a
+                href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2"
+              >
+                caffeine.ai
+              </a>
+            </p>
+            {/* Mobile lock button */}
+            <button
+              type="button"
+              data-ocid="layout.lock_button"
+              onClick={lockApp}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all opacity-60 hover:opacity-100"
+              style={{
+                color: "oklch(0.72 0.12 295)",
+                border: "1px solid oklch(0.72 0.12 295 / 0.3)",
+              }}
             >
-              caffeine.ai
-            </a>
-          </p>
+              <Lock className="w-3 h-3" />
+              Lock
+            </button>
+          </div>
         </SheetContent>
       </Sheet>
 
