@@ -10,7 +10,6 @@ import {
   Building2,
   CalendarDays,
   Crown,
-  Gem,
   LayoutDashboard,
   LayoutGrid,
   Lock,
@@ -82,26 +81,21 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 bg-sidebar z-30">
         {/* Logo */}
-        <div className="px-7 py-8 border-b border-sidebar-border">
+        <div className="px-7 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center">
-              <Gem className="w-4 h-4 text-sidebar-primary-foreground" />
-            </div>
-            <div className="flex-1">
-              <h1 className="font-display text-lg font-semibold text-sidebar-foreground tracking-widest uppercase">
-                Truffleur
-              </h1>
-              <p className="text-xs text-sidebar-foreground/50 tracking-wider uppercase font-light">
-                Studio
-              </p>
-            </div>
+            <img
+              src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
+              alt="Truffleur"
+              className="h-10 w-auto object-contain"
+              style={{ filter: "brightness(0) invert(1)", maxWidth: "160px" }}
+            />
             {/* Lock button */}
             <button
               type="button"
               data-ocid="layout.lock_button"
               onClick={lockApp}
               title="Lock app"
-              className="w-7 h-7 rounded-md flex items-center justify-center transition-all hover:bg-sidebar-accent/60 opacity-40 hover:opacity-100"
+              className="ml-auto w-7 h-7 rounded-md flex items-center justify-center transition-all hover:bg-sidebar-accent/60 opacity-40 hover:opacity-100"
               style={{ color: "oklch(0.72 0.12 295)" }}
             >
               <Lock className="w-3.5 h-3.5" />

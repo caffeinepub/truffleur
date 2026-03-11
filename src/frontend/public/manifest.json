@@ -1,6 +1,6 @@
 {
-  "name": "TRUFFLEUR",
-  "short_name": "TRUFFLEUR",
+  "name": "Truffleur",
+  "short_name": "Truffleur",
   "description": "Luxury business management for truffles & flowers",
   "start_url": "/",
   "display": "standalone",
@@ -9,9 +9,9 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/assets/generated/truffleur-icon.dim_512x512.png",
+      "src": "/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
@@ -94,11 +93,6 @@ export default function Dashboard() {
     },
   ];
 
-  // Quick actions arranged in pairs as requested:
-  // Add Client | Add Order
-  // VIP Client | Today's Orders
-  // Reports    | Calendar
-  // Suppliers  | Products
   const quickActions = [
     {
       label: "Add Client",
@@ -172,14 +166,14 @@ export default function Dashboard() {
         </p>
       </header>
 
-      {/* Signature Truffles Feature Card — vivid spring colors */}
+      {/* Compact banner — View Products with truffle image background */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
           className="relative overflow-hidden rounded-2xl shadow-elevated"
           style={{
             background:
               "linear-gradient(135deg, oklch(0.30 0.14 148) 0%, oklch(0.38 0.16 148) 30%, oklch(0.55 0.18 290) 65%, oklch(0.45 0.20 290) 100%)",
-            minHeight: "140px",
+            minHeight: "70px",
           }}
         >
           {/* Decorative blurred blobs */}
@@ -197,71 +191,33 @@ export default function Dashboard() {
               filter: "blur(56px)",
             }}
           />
-          {/* Extra inner glow for richness */}
+
+          {/* Button centred in the compact banner */}
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(ellipse at 60% 40%, oklch(0.68 0.18 290 / 0.25) 0%, transparent 55%)",
-            }}
-          />
-
-          <div className="relative flex flex-col md:flex-row items-stretch">
-            {/* Button side */}
-            <div
-              className="flex-1 flex items-center justify-center md:justify-start p-5 md:p-8"
-              style={{ minHeight: "140px" }}
+            className="relative flex items-center justify-center p-4"
+            style={{ minHeight: "70px" }}
+          >
+            <button
+              type="button"
+              data-ocid="dashboard.truffles.button"
+              onClick={() => navigate({ to: "/products" })}
+              className="relative overflow-hidden rounded-xl shadow-lg font-semibold tracking-wide text-white transition-all duration-200 px-10 py-4 hover:scale-105"
+              style={{
+                backgroundImage:
+                  "url('/assets/generated/truffle-spring-banner.dim_900x300.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                minWidth: "220px",
+                fontSize: "0.95rem",
+                letterSpacing: "0.08em",
+              }}
             >
-              <Button
-                size="default"
-                data-ocid="dashboard.truffles.button"
-                onClick={() => navigate({ to: "/products" })}
-                className="font-semibold tracking-wide text-white shadow-lg transition-all duration-200"
-                style={{
-                  background: "oklch(0.65 0.22 290)",
-                  border: "none",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "oklch(0.72 0.22 290)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "oklch(0.65 0.22 290)";
-                }}
-              >
-                View Products
-              </Button>
-            </div>
-
-            {/* Image side */}
-            <div className="relative md:w-72 lg:w-80 h-36 md:h-auto flex-shrink-0 overflow-hidden">
-              <img
-                src="/assets/generated/truffle-spring-banner.dim_900x300.jpg"
-                alt="Spring chocolate truffles with flowers"
-                className="w-full h-full object-cover"
-                style={{
-                  minHeight: "140px",
-                  opacity: 0.85,
-                }}
-              />
-              {/* Strong left-edge fade into banner gradient */}
               <div
-                className="hidden md:block absolute inset-y-0 left-0 w-24"
-                style={{
-                  background:
-                    "linear-gradient(to right, oklch(0.55 0.18 290), transparent)",
-                }}
+                className="absolute inset-0 rounded-xl"
+                style={{ background: "oklch(0.18 0.06 148 / 0.45)" }}
               />
-              {/* Top + bottom subtle fade */}
-              <div
-                className="absolute inset-x-0 top-0 h-10"
-                style={{
-                  background:
-                    "linear-gradient(to bottom, oklch(0.38 0.16 148 / 0.6), transparent)",
-                }}
-              />
-            </div>
+              <span className="relative z-10">View Products</span>
+            </button>
           </div>
         </div>
       </section>
