@@ -6,8 +6,8 @@ import {
   Building2,
   CalendarDays,
   Crown,
-  LayoutGrid,
   PackagePlus,
+  Receipt,
   ShoppingBag,
   TrendingUp,
   Truck,
@@ -93,6 +93,7 @@ export default function Dashboard() {
     },
   ];
 
+  // Quick Actions: VIP replaced by Expenses; Suppliers and Reports switched
   const quickActions = [
     {
       label: "Add Client",
@@ -108,29 +109,10 @@ export default function Dashboard() {
         navigate({ to: "/orders", search: { highlight: undefined } }),
     },
     {
-      label: "VIP Clients",
-      icon: Crown,
-      ocid: "dashboard.vip.button",
-      onClick: () => navigate({ to: "/vip" }),
-    },
-    {
-      label: "Today's Orders",
-      icon: ShoppingBag,
-      ocid: "dashboard.todays_orders.button",
-      onClick: () =>
-        navigate({ to: "/orders", search: { highlight: undefined } }),
-    },
-    {
-      label: "Reports",
-      icon: BarChart3,
-      ocid: "dashboard.reports.button",
-      onClick: () => navigate({ to: "/reports" }),
-    },
-    {
-      label: "Calendar",
-      icon: CalendarDays,
-      ocid: "dashboard.calendar.button",
-      onClick: () => navigate({ to: "/calendar" }),
+      label: "Expenses",
+      icon: Receipt,
+      ocid: "dashboard.expenses.button",
+      onClick: () => navigate({ to: "/expenses" }),
     },
     {
       label: "Suppliers",
@@ -139,16 +121,43 @@ export default function Dashboard() {
       onClick: () => navigate({ to: "/suppliers" }),
     },
     {
-      label: "Products",
-      icon: LayoutGrid,
-      ocid: "dashboard.products.button",
-      onClick: () => navigate({ to: "/products" }),
+      label: "Calendar",
+      icon: CalendarDays,
+      ocid: "dashboard.calendar.button",
+      onClick: () => navigate({ to: "/calendar" }),
+    },
+    {
+      label: "Reports",
+      icon: BarChart3,
+      ocid: "dashboard.reports.button",
+      onClick: () => navigate({ to: "/reports" }),
     },
   ];
 
+  // Upcoming orders for the Calendar section (next 7 days, active only)
+  const upcomingOrders = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const in7 = new Date(today);
+    in7.setDate(in7.getDate() + 7);
+    return orders
+      .filter((o) => {
+        if (o.status === "Delivered" || o.status === "Cancelled") return false;
+        if (!o.deliveryDate) return false;
+        const d = new Date(o.deliveryDate);
+        return d >= today && d <= in7;
+      })
+      .sort((a, b) => {
+        const da = new Date(a.deliveryDate ?? "").getTime();
+        const db = new Date(b.deliveryDate ?? "").getTime();
+        return da - db;
+      })
+      .slice(0, 5);
+  }, [orders]);
+
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
-      {/* Header — logo only, no redundant text */}
+      {/* Header */}
       <header className="mb-8">
         <div className="flex items-center gap-4">
           <img
@@ -172,7 +181,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Banner — joyful picnic in a flower field */}
+      {/* Banner */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
           className="relative overflow-hidden rounded-2xl shadow-elevated"
@@ -184,7 +193,6 @@ export default function Dashboard() {
             minHeight: "150px",
           }}
         >
-          {/* Soft vignette to keep text readable */}
           <div
             className="absolute inset-0"
             style={{
@@ -192,8 +200,6 @@ export default function Dashboard() {
                 "linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.18) 100%)",
             }}
           />
-
-          {/* View Products — thin elegant text floating over image */}
           <div className="relative flex items-center justify-center py-11">
             <button
               type="button"
@@ -259,11 +265,11 @@ export default function Dashboard() {
       </section>
 
       {/* Quick Actions */}
-      <section>
+      <section className="mb-10">
         <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-5">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {quickActions.map((action) => (
             <button
               type="button"
@@ -283,35 +289,65 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Recent Orders Preview */}
-      {orders.length > 0 && (
-        <section className="mt-10">
-          <div className="flex items-center justify-between mb-5">
+      {/* Calendar — Upcoming Orders (replaces Recent Orders history) */}
+      <section>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-muted-foreground" />
             <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground">
-              Recent Orders
+              Upcoming This Week
             </h2>
-            <button
-              type="button"
-              onClick={() =>
-                navigate({ to: "/orders", search: { highlight: undefined } })
-              }
-              className="text-xs text-primary hover:text-primary/70 font-medium transition-colors"
-            >
-              View all →
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/calendar" })}
+            className="text-xs text-primary hover:text-primary/70 font-medium transition-colors"
+          >
+            Open Calendar →
+          </button>
+        </div>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map((i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : upcomingOrders.length === 0 ? (
+          <Card className="shadow-card border-border/50">
+            <CardContent className="p-6 text-center">
+              <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-20" />
+              <p className="text-sm text-muted-foreground">
+                No upcoming orders in the next 7 days
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
           <Card className="shadow-card border-border/50">
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {orders.slice(0, 5).map((order) => (
-                  <div
+                {upcomingOrders.map((order) => (
+                  <button
+                    type="button"
                     key={String(order.id)}
-                    className="flex items-center justify-between px-5 py-3.5"
+                    onClick={() =>
+                      navigate({
+                        to: "/orders",
+                        search: { highlight: String(order.id) },
+                      })
+                    }
+                    className="w-full text-left flex items-center justify-between px-5 py-3.5 hover:bg-accent/20 transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <span className="text-xs font-mono text-muted-foreground">
-                        #{String(order.id).padStart(3, "0")}
-                      </span>
+                      <div className="shrink-0 text-center">
+                        <p className="text-xs font-semibold text-primary">
+                          {order.deliveryDate
+                            ? new Date(order.deliveryDate).toLocaleDateString(
+                                "en-GB",
+                                { day: "2-digit", month: "short" },
+                              )
+                            : "—"}
+                        </p>
+                      </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">
                           {order.clientName}
@@ -327,13 +363,13 @@ export default function Dashboard() {
                       </span>
                       <StatusBadge status={order.status} />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }

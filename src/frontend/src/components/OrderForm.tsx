@@ -10,11 +10,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Order } from "../backend.d";
+import type { Client, Order } from "../backend.d";
 import {
+  useAddClient,
   useAddOrder,
   useGetAllClients,
   useUpdateOrder,
@@ -33,6 +35,8 @@ export default function OrderForm({
 }: OrderFormProps) {
   const addOrder = useAddOrder();
   const updateOrder = useUpdateOrder();
+  const addClient = useAddClient();
+  const queryClient = useQueryClient();
   const { data: clients = [] } = useGetAllClients();
   const isEditing = !!editOrder;
 
@@ -52,15 +56,18 @@ export default function OrderForm({
     notes: editOrder?.notes ?? "",
   });
 
-  const isPending = isEditing ? updateOrder.isPending : addOrder.isPending;
+  const isPending = isEditing
+    ? updateOrder.isPending
+    : addOrder.isPending || addClient.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const matchedClient = clients.find(
+    let matchedClient = clients.find(
       (c) =>
         `${c.firstName} ${c.lastName}`.toLowerCase() ===
         form.clientName.toLowerCase(),
     );
+
     try {
       if (isEditing) {
         await updateOrder.mutateAsync({
@@ -80,8 +87,40 @@ export default function OrderForm({
         });
         toast.success("Order updated successfully");
       } else {
+        // Auto-create client if the name is new
+        let clientId = matchedClient?.id ?? 0n;
+        if (!matchedClient && form.clientName.trim()) {
+          const nameParts = form.clientName.trim().split(" ");
+          const firstName = nameParts[0];
+          const lastName = nameParts.slice(1).join(" ") || "-";
+          await addClient.mutateAsync({
+            firstName,
+            lastName,
+            phone: "",
+            instagram: "",
+            email: "",
+            clientType: "Regular",
+            favoriteFlowers: "",
+            favoriteTruffles: "",
+            importantDates: "",
+            notes: "",
+            isVip: false,
+          });
+          // Refetch clients to get the newly created client's id
+          await queryClient.refetchQueries({ queryKey: ["clients"] });
+          const updatedClients =
+            queryClient.getQueryData<Client[]>(["clients"]) ?? [];
+          const newClient = updatedClients.find(
+            (c) =>
+              `${c.firstName} ${c.lastName}`.toLowerCase() ===
+              form.clientName.toLowerCase(),
+          );
+          clientId = newClient?.id ?? 0n;
+          toast.success(`New client "${form.clientName}" added to catalogue`);
+        }
+
         await addOrder.mutateAsync({
-          clientId: matchedClient?.id ?? 0n,
+          clientId,
           clientName: form.clientName,
           productName: form.productName,
           quantity: BigInt(form.quantity || "1"),
@@ -116,7 +155,7 @@ export default function OrderForm({
         </Label>
         <Input
           data-ocid="order_form.client_name.input"
-          placeholder="Search client name..."
+          placeholder="Search or type a new client name..."
           list="clients-list"
           required
           {...field("clientName")}
@@ -126,6 +165,16 @@ export default function OrderForm({
             <option key={String(c.id)} value={`${c.firstName} ${c.lastName}`} />
           ))}
         </datalist>
+        {form.clientName &&
+          !clients.find(
+            (c) =>
+              `${c.firstName} ${c.lastName}`.toLowerCase() ===
+              form.clientName.toLowerCase(),
+          ) && (
+            <p className="text-xs text-primary mt-1">
+              New client — will be added to the catalogue automatically
+            </p>
+          )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

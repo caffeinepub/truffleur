@@ -31,18 +31,45 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-type ProductCategory = "Truffles" | "Flowers" | "Gift Boxes" | "Seasonal";
+type ProductCategory =
+  | "Truffle"
+  | "Flowers"
+  | "Madeleine"
+  | "Cake Pop"
+  | "Macarons"
+  | "Oreshki"
+  | "NYC Cookies"
+  | "Other";
+
+const CATEGORIES: ProductCategory[] = [
+  "Truffle",
+  "Flowers",
+  "Madeleine",
+  "Cake Pop",
+  "Macarons",
+  "Oreshki",
+  "NYC Cookies",
+  "Other",
+];
 
 const CATEGORY_COLORS: Record<string, string> = {
+  Truffle: "bg-chart-1/10 text-chart-1 border-chart-1/20",
+  Flowers: "bg-pink-50 text-pink-700 border-pink-100",
+  Madeleine: "bg-chart-2/10 text-chart-2 border-chart-2/20",
+  "Cake Pop": "bg-chart-5/10 text-chart-5 border-chart-5/20",
+  Macarons: "bg-chart-3/10 text-chart-3 border-chart-3/20",
+  Oreshki: "bg-chart-4/10 text-chart-4 border-chart-4/20",
+  "NYC Cookies": "bg-primary/10 text-primary border-primary/20",
+  Other: "bg-muted/30 text-muted-foreground border-muted/40",
+  // Legacy support
   Truffles: "bg-chart-1/10 text-chart-1 border-chart-1/20",
-  Flowers: "bg-chart-2/10 text-chart-2 border-chart-2/20",
   "Gift Boxes": "bg-chart-5/10 text-chart-5 border-chart-5/20",
   Seasonal: "bg-chart-3/10 text-chart-3 border-chart-3/20",
 };
 
 const EMPTY_FORM = {
   name: "",
-  category: "Truffles" as ProductCategory,
+  category: "Truffle" as ProductCategory,
   basePrice: "",
   costPrice: "",
 };
@@ -350,7 +377,7 @@ export default function Products() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, name: e.target.value }))
                 }
-                placeholder="e.g. Black Truffle Box (50g)"
+                placeholder="e.g. Dark Chocolate Truffle Box"
               />
             </div>
             <div className="space-y-1.5">
@@ -365,14 +392,7 @@ export default function Products() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(
-                    [
-                      "Truffles",
-                      "Flowers",
-                      "Gift Boxes",
-                      "Seasonal",
-                    ] as ProductCategory[]
-                  ).map((c) => (
+                  {CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>

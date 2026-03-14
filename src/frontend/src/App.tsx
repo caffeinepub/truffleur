@@ -11,6 +11,7 @@ import PasswordGate from "./components/PasswordGate";
 import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
 import Dashboard from "./pages/Dashboard";
+import Expenses from "./pages/Expenses";
 import Orders from "./pages/Orders";
 import Products from "./pages/Products";
 import Reports from "./pages/Reports";
@@ -76,6 +77,12 @@ const reportsRoute = createRoute({
   component: Reports,
 });
 
+const expensesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/expenses",
+  component: Expenses,
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   clientsRoute,
@@ -85,6 +92,7 @@ const routeTree = rootRoute.addChildren([
   productsRoute,
   suppliersRoute,
   reportsRoute,
+  expensesRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -49,16 +49,21 @@ export default function Clients() {
     return matchSearch && matchVip;
   });
 
-  // Keep selectedClient in sync after edits
   const currentClient = selectedClient
     ? (clients.find((c) => c.id === selectedClient.id) ?? selectedClient)
     : null;
 
   if (currentClient) {
+    // Filter orders by clientName (case-insensitive) to avoid clientId=0n bug
+    const clientOrders = orders.filter(
+      (o) =>
+        o.clientName.toLowerCase() ===
+        `${currentClient.firstName} ${currentClient.lastName}`.toLowerCase(),
+    );
     return (
       <ClientDetail
         client={currentClient}
-        orders={orders.filter((o) => o.clientId === currentClient.id)}
+        orders={clientOrders}
         onBack={() => setSelectedClient(null)}
       />
     );
@@ -197,6 +202,7 @@ function ClientDetail({
 }) {
   const [addOrderOpen, setAddOrderOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
   const totalSpent = orders.reduce((s, o) => s + Number(o.price), 0);
 
   return (
@@ -233,7 +239,6 @@ function ClientDetail({
             {client.clientType}
           </p>
         </div>
-        {/* Edit Client button */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogTrigger asChild>
             <Button
@@ -348,6 +353,35 @@ function ClientDetail({
         </Dialog>
       </div>
 
+      {/* Edit Order Dialog */}
+      <Dialog
+        open={!!editOrder}
+        onOpenChange={(open) => {
+          if (!open) setEditOrder(null);
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">
+              Edit Order
+            </DialogTitle>
+          </DialogHeader>
+          <div
+            className="overflow-y-auto flex-1 pr-1"
+            style={{ maxHeight: "calc(90dvh - 80px)" }}
+          >
+            <div className="pb-4">
+              {editOrder && (
+                <OrderForm
+                  editOrder={editOrder}
+                  onSuccess={() => setEditOrder(null)}
+                />
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Order history */}
       {orders.length > 0 && (
         <div>
@@ -356,9 +390,12 @@ function ClientDetail({
           </h2>
           <div className="space-y-2">
             {orders.map((order) => (
-              <div
+              <button
+                type="button"
                 key={String(order.id)}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 bg-card border border-border/50 rounded-xl"
+                onClick={() => setEditOrder(order)}
+                className="w-full text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 bg-card border border-border/50 rounded-xl hover:border-primary/20 hover:shadow-card transition-all duration-200"
+                title="Click to view / edit this order"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -379,7 +416,7 @@ function ClientDetail({
                   </span>
                   <StatusBadge status={order.status} />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

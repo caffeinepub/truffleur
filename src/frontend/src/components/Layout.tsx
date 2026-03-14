@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Lock,
   MoreHorizontal,
+  Receipt,
   ShoppingBag,
   Users,
 } from "lucide-react";
@@ -67,6 +68,12 @@ const secondaryNavItems = [
     label: "Suppliers",
     icon: Building2,
     ocid: "nav.suppliers.link",
+  },
+  {
+    to: "/expenses",
+    label: "Expenses",
+    icon: Receipt,
+    ocid: "nav.expenses.link",
   },
 ];
 
