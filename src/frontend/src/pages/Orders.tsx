@@ -171,10 +171,26 @@ export default function Orders() {
     HISTORY_STATUSES.includes(o.status),
   );
 
+  // Sort active orders by delivery date (ascending — soonest first)
+  const sortedActive = [...activeOrders].sort((a, b) => {
+    if (!a.deliveryDate && !b.deliveryDate) return 0;
+    if (!a.deliveryDate) return 1;
+    if (!b.deliveryDate) return -1;
+    return a.deliveryDate.localeCompare(b.deliveryDate);
+  });
+
+  // Sort history orders by delivery date (descending — most recent first)
+  const sortedHistory = [...historyOrders].sort((a, b) => {
+    if (!a.deliveryDate && !b.deliveryDate) return 0;
+    if (!a.deliveryDate) return 1;
+    if (!b.deliveryDate) return -1;
+    return b.deliveryDate.localeCompare(a.deliveryDate);
+  });
+
   const filteredActive =
     status === "All"
-      ? activeOrders
-      : activeOrders.filter((o) => o.status === status);
+      ? sortedActive
+      : sortedActive.filter((o) => o.status === status);
 
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto animate-fade-in">
@@ -326,7 +342,7 @@ export default function Orders() {
       )}
 
       {/* Order History Section */}
-      {historyOrders.length > 0 && (
+      {sortedHistory.length > 0 && (
         <section className="mt-12">
           <div className="flex items-center gap-3 mb-5">
             <History className="w-4 h-4 text-muted-foreground" />
@@ -334,11 +350,11 @@ export default function Orders() {
               Order History
             </h2>
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              {historyOrders.length}
+              {sortedHistory.length}
             </span>
           </div>
           <div className="space-y-2">
-            {historyOrders.map((order, idx) => (
+            {sortedHistory.map((order, idx) => (
               <button
                 type="button"
                 key={String(order.id)}
@@ -384,12 +400,12 @@ export default function Orders() {
           </div>
           <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between text-sm text-muted-foreground">
             <span>
-              {historyOrders.length} completed order
-              {historyOrders.length !== 1 ? "s" : ""}
+              {sortedHistory.length} completed order
+              {sortedHistory.length !== 1 ? "s" : ""}
             </span>
             <span className="font-medium text-foreground">
               Total:{" "}
-              {historyOrders
+              {sortedHistory
                 .reduce((s, o) => s + Number(o.price), 0)
                 .toLocaleString()}{" "}
               MKD

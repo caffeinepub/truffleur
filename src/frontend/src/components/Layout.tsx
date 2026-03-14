@@ -84,16 +84,23 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-transparent">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 bg-sidebar z-30">
+      <aside
+        className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 z-30"
+        style={{
+          background: "oklch(0.18 0.065 148 / 0.88)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
         {/* Logo */}
         <div className="px-7 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <img
               src="/assets/generated/truffleur-logo-v3-transparent.dim_400x200.png"
               alt="Truffleur"
-              className="h-12 w-auto object-contain rounded-lg"
+              className="h-12 w-auto object-contain"
               style={{
                 maxWidth: "160px",
                 filter: "brightness(1.05)",
@@ -167,7 +174,14 @@ export default function Layout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-sidebar border-t-2 border-sidebar-primary/30">
+      <nav
+        className="fixed bottom-0 inset-x-0 z-30 md:hidden border-t-2 border-sidebar-primary/30"
+        style={{
+          background: "oklch(0.18 0.065 148 / 0.88)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
         <div className="flex items-stretch">
           {primaryNavItems.map((item) => {
             const isActive =
@@ -214,7 +228,12 @@ export default function Layout({ children }: { children: ReactNode }) {
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="bg-background border-border rounded-t-2xl pb-safe"
+          className="border-border rounded-t-2xl pb-safe"
+          style={{
+            background: "rgba(248, 245, 255, 0.90)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          }}
           data-ocid="nav.more.sheet"
         >
           <SheetHeader className="mb-4">

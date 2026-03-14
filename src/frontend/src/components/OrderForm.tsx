@@ -19,6 +19,7 @@ import {
   useAddClient,
   useAddOrder,
   useGetAllClients,
+  useGetAllProducts,
   useUpdateOrder,
 } from "../hooks/useQueries";
 
@@ -38,10 +39,18 @@ export default function OrderForm({
   const addClient = useAddClient();
   const queryClient = useQueryClient();
   const { data: clients = [] } = useGetAllClients();
+  const { data: products = [] } = useGetAllProducts();
   const isEditing = !!editOrder;
 
+  const getInitialClientName = () => editOrder?.clientName ?? defaultClientName;
+  const isExistingClient = (name: string) =>
+    clients.some(
+      (c) =>
+        `${c.firstName} ${c.lastName}`.toLowerCase() === name.toLowerCase(),
+    );
+
   const [form, setForm] = useState({
-    clientName: editOrder?.clientName ?? defaultClientName,
+    clientName: getInitialClientName(),
     productName: editOrder?.productName ?? "",
     quantity: editOrder ? String(editOrder.quantity) : "1",
     occasion: editOrder?.occasion ?? "",
@@ -54,6 +63,13 @@ export default function OrderForm({
     deposit: editOrder ? String(editOrder.deposit) : "",
     status: editOrder?.status ?? "New",
     notes: editOrder?.notes ?? "",
+  });
+
+  // useNewClient: true = show text input for a new client name
+  const [useNewClient, setUseNewClient] = useState(() => {
+    const name = getInitialClientName();
+    if (!name) return false;
+    return !isExistingClient(name);
   });
 
   const isPending = isEditing
@@ -149,53 +165,105 @@ export default function OrderForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-          Client Name
-        </Label>
-        <Input
-          data-ocid="order_form.client_name.input"
-          placeholder="Search or type a new client name..."
-          list="clients-list"
-          required
-          {...field("clientName")}
-        />
-        <datalist id="clients-list">
-          {clients.map((c) => (
-            <option key={String(c.id)} value={`${c.firstName} ${c.lastName}`} />
-          ))}
-        </datalist>
-        {form.clientName &&
-          !clients.find(
-            (c) =>
-              `${c.firstName} ${c.lastName}`.toLowerCase() ===
-              form.clientName.toLowerCase(),
-          ) && (
-            <p className="text-xs text-primary mt-1">
-              New client — will be added to the catalogue automatically
-            </p>
-          )}
-      </div>
+      {/* Client field */}
+      {!useNewClient ? (
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+            Client
+          </Label>
+          <Select
+            value={form.clientName}
+            onValueChange={(v) => {
+              if (v === "__new__") {
+                setUseNewClient(true);
+                setForm((prev) => ({ ...prev, clientName: "" }));
+              } else {
+                setForm((prev) => ({ ...prev, clientName: v }));
+              }
+            }}
+          >
+            <SelectTrigger data-ocid="order_form.client.select">
+              <SelectValue placeholder="Select a client..." />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.map((c) => (
+                <SelectItem
+                  key={String(c.id)}
+                  value={`${c.firstName} ${c.lastName}`}
+                >
+                  {c.firstName} {c.lastName}
+                </SelectItem>
+              ))}
+              <SelectItem value="__new__">+ New client...</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+            Client Name{" "}
+            <button
+              type="button"
+              onClick={() => setUseNewClient(false)}
+              className="text-xs text-primary underline ml-2 normal-case font-normal"
+            >
+              ← Back to list
+            </button>
+          </Label>
+          <Input
+            data-ocid="order_form.client_name.input"
+            placeholder="Enter new client name..."
+            required
+            value={form.clientName}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, clientName: e.target.value }))
+            }
+          />
+          <p className="text-xs text-primary mt-1">
+            New client — will be added to the catalogue automatically
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Product dropdown linked to catalog */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Product
           </Label>
-          <Input
-            data-ocid="order_form.product_name.input"
-            placeholder="Luxury Truffle Box"
-            required
-            list="products-list"
-            {...field("productName")}
-          />
-          <datalist id="products-list">
-            <option value="Flower Cone + 5 Truffles" />
-            <option value="Lavender Truffle Box" />
-            <option value="Rose Luxury Box" />
-            <option value="Corporate Gift Set" />
-            <option value="Seasonal Collection" />
-          </datalist>
+          {products.length > 0 ? (
+            <Select
+              value={form.productName}
+              onValueChange={(v) => {
+                const selectedProduct = products.find((p) => p.name === v);
+                setForm((prev) => ({
+                  ...prev,
+                  productName: v,
+                  price: selectedProduct
+                    ? String(selectedProduct.basePrice)
+                    : prev.price,
+                }));
+              }}
+            >
+              <SelectTrigger data-ocid="order_form.product.select">
+                <SelectValue placeholder="Select a product..." />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={String(p.id)} value={p.name}>
+                    {p.name} — {Number(p.basePrice).toLocaleString()} MKD
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              data-ocid="order_form.product_name.input"
+              placeholder="Luxury Truffle Box"
+              required
+              {...field("productName")}
+            />
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
@@ -206,23 +274,35 @@ export default function OrderForm({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Occasion dropdown */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Occasion
           </Label>
-          <Input
-            placeholder="Birthday, Anniversary..."
-            list="occasions-list"
-            {...field("occasion")}
-          />
-          <datalist id="occasions-list">
-            <option value="Birthday" />
-            <option value="Anniversary" />
-            <option value="Corporate" />
-            <option value="Wedding" />
-            <option value="Valentine's Day" />
-            <option value="Christmas" />
-          </datalist>
+          <Select
+            value={form.occasion || "__none__"}
+            onValueChange={(v) =>
+              setForm((prev) => ({
+                ...prev,
+                occasion: v === "__none__" ? "" : v,
+              }))
+            }
+          >
+            <SelectTrigger data-ocid="order_form.occasion.select">
+              <SelectValue placeholder="Select occasion..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">No occasion</SelectItem>
+              <SelectItem value="Birthday">Birthday</SelectItem>
+              <SelectItem value="Anniversary">Anniversary</SelectItem>
+              <SelectItem value="Corporate">Corporate</SelectItem>
+              <SelectItem value="Wedding">Wedding</SelectItem>
+              <SelectItem value="Valentine's Day">Valentine's Day</SelectItem>
+              <SelectItem value="Christmas">Christmas</SelectItem>
+              <SelectItem value="Mother's Day">Mother's Day</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">

@@ -30,6 +30,10 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEY, "true");
       setAuthenticated(true);
       setError(false);
+      // Redirect to orders as the default landing page
+      if (window.location.pathname === "/" || window.location.pathname === "") {
+        window.location.replace("/orders");
+      }
     } else {
       setError(true);
       setShaking(true);

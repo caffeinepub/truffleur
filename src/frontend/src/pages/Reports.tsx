@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type ChartConfig,
@@ -14,8 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BarChart3, ShoppingBag, TrendingUp, Users } from "lucide-react";
-import { useMemo } from "react";
+import {
+  BarChart3,
+  Download,
+  ShoppingBag,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -27,6 +34,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { Order } from "../backend.d";
 import { useGetAllClients, useGetAllOrders } from "../hooks/useQueries";
 
 const MONTH_LABELS = [
@@ -59,10 +67,45 @@ const barChartConfig: ChartConfig = {
   },
 };
 
+function orderInPeriod(o: Order, period: string): boolean {
+  if (period === "all") return true;
+  const ts = Number(o.createdAt) / 1_000_000;
+  const od = new Date(ts);
+  const now = new Date();
+  if (period === "today") {
+    return od.toDateString() === now.toDateString();
+  }
+  if (period === "week") {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
+    return od >= weekAgo;
+  }
+  if (period === "month") {
+    return (
+      od.getMonth() === now.getMonth() && od.getFullYear() === now.getFullYear()
+    );
+  }
+  if (period === "quarter") {
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(now.getMonth() - 3);
+    return od >= threeMonthsAgo;
+  }
+  return true;
+}
+
 export default function Reports() {
   const { isLoading: loadingClients } = useGetAllClients();
   const { data: orders = [], isLoading: loadingOrders } = useGetAllOrders();
   const isLoading = loadingClients || loadingOrders;
+
+  const [period, setPeriod] = useState<
+    "today" | "week" | "month" | "quarter" | "all"
+  >("all");
+
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => orderInPeriod(o, period)),
+    [orders, period],
+  );
 
   // Monthly revenue for last 6 months
   const monthlyRevenue = useMemo(() => {
@@ -70,8 +113,7 @@ export default function Reports() {
     const result: { month: string; revenue: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      // month key unused
-      const revenue = orders
+      const revenue = filteredOrders
         .filter((o) => {
           const ts = Number(o.createdAt) / 1_000_000;
           const od = new Date(ts);
@@ -85,22 +127,22 @@ export default function Reports() {
       result.push({ month: MONTH_LABELS[d.getMonth()], revenue });
     }
     return result;
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Order status distribution
   const statusDistribution = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const o of orders) {
+    for (const o of filteredOrders) {
       counts[o.status] = (counts[o.status] || 0) + 1;
     }
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Top 5 clients
   const topClients = useMemo(() => {
     const map: Record<string, { name: string; count: number; total: number }> =
       {};
-    for (const o of orders) {
+    for (const o of filteredOrders) {
       const key = String(o.clientId);
       if (!map[key]) map[key] = { name: o.clientName, count: 0, total: 0 };
       map[key].count++;
@@ -109,13 +151,13 @@ export default function Reports() {
     return Object.values(map)
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Best-selling products
   const bestProducts = useMemo(() => {
     const map: Record<string, { name: string; count: number; total: number }> =
       {};
-    for (const o of orders) {
+    for (const o of filteredOrders) {
       const key = o.productName;
       if (!map[key]) map[key] = { name: key, count: 0, total: 0 };
       map[key].count += Number(o.quantity);
@@ -124,16 +166,59 @@ export default function Reports() {
     return Object.values(map)
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-  }, [orders]);
+  }, [filteredOrders]);
 
-  const totalRevenue = orders
+  const totalRevenue = filteredOrders
     .filter((o) => o.status === "Delivered")
     .reduce((s, o) => s + Number(o.price), 0);
   const avgOrderValue =
-    orders.length > 0
-      ? orders.reduce((s, o) => s + Number(o.price), 0) / orders.length
+    filteredOrders.length > 0
+      ? filteredOrders.reduce((s, o) => s + Number(o.price), 0) /
+        filteredOrders.length
       : 0;
-  const activeClients = new Set(orders.map((o) => String(o.clientId))).size;
+  const activeClients = new Set(filteredOrders.map((o) => String(o.clientId)))
+    .size;
+
+  function exportReportCSV() {
+    const lines: string[] = [];
+    lines.push(
+      `"TRUFFLEUR Report — ${period === "all" ? "All Time" : period}","${new Date().toLocaleDateString()}"`,
+    );
+    lines.push("");
+    lines.push('"Summary"');
+    lines.push(`"Total Revenue","${totalRevenue.toLocaleString()} MKD"`);
+    lines.push(`"Total Orders","${filteredOrders.length}"`);
+    lines.push(
+      `"Avg Order Value","${Math.round(avgOrderValue).toLocaleString()} MKD"`,
+    );
+    lines.push(`"Active Clients","${activeClients}"`);
+    lines.push("");
+    lines.push('"Top Clients"');
+    lines.push('"Rank","Client","Orders","Total (MKD)"');
+    topClients.forEach((c, i) => {
+      lines.push(
+        `"${i + 1}","${c.name}","${c.count}","${c.total.toLocaleString()}"`,
+      );
+    });
+    lines.push("");
+    lines.push('"Best-Selling Products"');
+    lines.push('"Rank","Product","Qty Sold","Revenue (MKD)"');
+    bestProducts.forEach((p, i) => {
+      lines.push(
+        `"${i + 1}","${p.name}","${p.count}","${p.total.toLocaleString()}"`,
+      );
+    });
+
+    const csv = lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const date = new Date().toISOString().slice(0, 10);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `truffleur-report-${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const summaryStats = [
     {
@@ -145,7 +230,7 @@ export default function Reports() {
     },
     {
       label: "Total Orders",
-      value: orders.length,
+      value: filteredOrders.length,
       icon: ShoppingBag,
       color: "text-chart-2",
       bg: "bg-secondary",
@@ -169,17 +254,55 @@ export default function Reports() {
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
       {/* Header */}
-      <header className="mb-10">
-        <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">
-          Analytics
-        </p>
-        <h1 className="font-display text-4xl font-semibold text-foreground leading-tight">
-          Reports
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Business performance and insights
-        </p>
-      </header>
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+        <header>
+          <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">
+            Analytics
+          </p>
+          <h1 className="font-display text-4xl font-semibold text-foreground leading-tight">
+            Reports
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Business performance and insights
+          </p>
+        </header>
+        <Button
+          variant="outline"
+          onClick={exportReportCSV}
+          className="gap-2 shrink-0"
+          data-ocid="reports.export.button"
+          disabled={isLoading || filteredOrders.length === 0}
+        >
+          <Download className="w-4 h-4" /> Export Report
+        </Button>
+      </div>
+
+      {/* Period filter */}
+      <div className="flex gap-2 mb-8 flex-wrap">
+        {(["today", "week", "month", "quarter", "all"] as const).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPeriod(p)}
+            data-ocid={`reports.period_filter.${p}`}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all ${
+              period === p
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-accent"
+            }`}
+          >
+            {p === "today"
+              ? "Today"
+              : p === "week"
+                ? "This Week"
+                : p === "month"
+                  ? "This Month"
+                  : p === "quarter"
+                    ? "Last 3 Months"
+                    : "All Time"}
+          </button>
+        ))}
+      </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">

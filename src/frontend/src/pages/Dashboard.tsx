@@ -5,12 +5,10 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
-  Crown,
   PackagePlus,
   Receipt,
   ShoppingBag,
   TrendingUp,
-  Truck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -27,6 +25,25 @@ function sevenDaysAgo() {
   return d;
 }
 
+export function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    New: "bg-blue-100 text-blue-700 border-blue-200",
+    "In Progress": "bg-amber-100 text-amber-700 border-amber-200",
+    Ready: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    Delivered: "bg-slate-100 text-slate-600 border-slate-200",
+    Cancelled: "bg-red-100 text-red-600 border-red-200",
+  };
+  return (
+    <span
+      className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
+        styles[status] ?? "bg-muted text-muted-foreground border-border"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { data: clients = [], isLoading: loadingClients } = useGetAllClients();
@@ -40,13 +57,16 @@ export default function Dashboard() {
       activeOrders: orders.filter(
         (o) => o.status !== "Delivered" && o.status !== "Cancelled",
       ).length,
-      todayDeliveries: orders.filter((o) => o.deliveryDate === today).length,
-      vipClients: clients.filter((c) => c.isVip).length,
       weeklySales: orders
         .filter((o) => {
           if (o.status !== "Delivered") return false;
           const ts = Number(o.createdAt) / 1_000_000;
           return new Date(ts) >= weekAgo;
+        })
+        .reduce((sum, o) => sum + Number(o.price), 0),
+      dailySales: orders
+        .filter((o) => {
+          return o.status === "Delivered" && o.deliveryDate === today;
         })
         .reduce((sum, o) => sum + Number(o.price), 0),
     };
@@ -70,25 +90,19 @@ export default function Dashboard() {
       bg: "bg-secondary",
     },
     {
-      label: "Today's Deliveries",
-      value: stats.todayDeliveries,
-      icon: Truck,
-      color: "text-chart-3",
-      bg: "bg-secondary",
-    },
-    {
-      label: "VIP Clients",
-      value: stats.vipClients,
-      icon: Crown,
-      color: "text-chart-5",
-      bg: "bg-accent/50",
-    },
-    {
       label: "Weekly Sales",
       value: `${stats.weeklySales.toLocaleString()} MKD`,
       icon: TrendingUp,
       color: "text-chart-1",
       bg: "bg-accent/50",
+      wide: true,
+    },
+    {
+      label: "Daily Sales",
+      value: `${stats.dailySales.toLocaleString()} MKD`,
+      icon: TrendingUp,
+      color: "text-chart-3",
+      bg: "bg-secondary",
       wide: true,
     },
   ];
@@ -160,17 +174,25 @@ export default function Dashboard() {
       {/* Header */}
       <header className="mb-8">
         <div className="flex items-center gap-4">
+          {/* Logo */}
           <img
             src="/assets/generated/truffleur-logo-v3-transparent.dim_400x200.png"
             alt="Truffleur"
-            className="h-16 w-auto object-contain rounded-xl"
+            className="h-16 w-auto object-contain"
             style={{
               maxWidth: "180px",
               filter:
                 "drop-shadow(0 2px 8px rgba(180,150,60,0.3)) brightness(1.05)",
             }}
           />
-          <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground ml-1">
+          <p
+            className="text-xs tracking-widest uppercase text-foreground/70 ml-1"
+            style={{
+              fontFamily: "'Courier New', 'Courier', monospace",
+              fontWeight: 500,
+              letterSpacing: "0.12em",
+            }}
+          >
             {new Date().toLocaleDateString("en-GB", {
               weekday: "long",
               year: "numeric",
@@ -184,23 +206,16 @@ export default function Dashboard() {
       {/* Banner */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
-          className="relative overflow-hidden rounded-2xl shadow-elevated"
+          className="relative overflow-hidden rounded-2xl"
           style={{
+            minHeight: "160px",
             backgroundImage:
               "url('/assets/generated/banner-picnic-joy-v2.dim_1400x500.jpg')",
             backgroundSize: "cover",
-            backgroundPosition: "center 30%",
-            minHeight: "150px",
+            backgroundPosition: "center",
           }}
         >
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.18) 100%)",
-            }}
-          />
-          <div className="relative flex items-center justify-center py-11">
+          <div className="relative flex items-center justify-center py-12">
             <button
               type="button"
               data-ocid="dashboard.truffles.button"
@@ -212,13 +227,13 @@ export default function Dashboard() {
                 fontStyle: "italic",
                 fontSize: "1.15rem",
                 letterSpacing: "0.2em",
-                color: "rgba(255, 252, 230, 0.95)",
+                color: "rgba(255, 252, 220, 0.98)",
                 background: "transparent",
                 border: "none",
                 padding: "0",
                 cursor: "pointer",
                 textShadow:
-                  "0 1px 8px rgba(0,0,0,0.45), 0 0px 2px rgba(0,0,0,0.5)",
+                  "0 2px 10px rgba(0,0,0,0.55), 0 0px 2px rgba(0,0,0,0.6)",
               }}
             >
               View Products
@@ -229,7 +244,7 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <section className="mb-10">
-        <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-5">
+        <h2 className="font-display text-sm font-medium tracking-widest uppercase text-foreground/60 mb-5">
           At a Glance
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -247,9 +262,9 @@ export default function Dashboard() {
                       {stat.label}
                     </p>
                     {isLoading ? (
-                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-8 w-20" />
                     ) : (
-                      <p className="font-display text-3xl font-semibold text-foreground">
+                      <p className="font-display text-2xl font-semibold text-foreground">
                         {stat.value}
                       </p>
                     )}
@@ -266,22 +281,22 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <section className="mb-10">
-        <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-5">
+        <h2 className="font-display text-sm font-medium tracking-widest uppercase text-foreground/60 mb-5">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           {quickActions.map((action) => (
             <button
-              type="button"
               key={action.label}
+              type="button"
               data-ocid={action.ocid}
               onClick={action.onClick}
-              className="relative group flex flex-col items-start gap-3 p-5 rounded-xl border transition-all duration-200 text-left border-primary/30 bg-accent/30 hover:bg-accent/60 hover:border-primary/50 hover:shadow-card cursor-pointer"
+              className="flex flex-col items-center gap-2.5 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-card transition-all duration-200 text-center group min-h-[88px] justify-center"
             >
-              <div className="p-2.5 rounded-lg bg-primary/15">
+              <div className="p-2.5 rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors">
                 <action.icon className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-xs font-medium text-foreground/80 leading-tight">
                 {action.label}
               </span>
             </button>
@@ -289,106 +304,55 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Calendar — Upcoming Orders (replaces Recent Orders history) */}
+      {/* Upcoming This Week */}
       <section>
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-muted-foreground" />
-            <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground">
-              Upcoming This Week
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/calendar" })}
-            className="text-xs text-primary hover:text-primary/70 font-medium transition-colors"
-          >
-            Open Calendar →
-          </button>
-        </div>
-        {isLoading ? (
+        <h2 className="font-display text-sm font-medium tracking-widest uppercase text-foreground/60 mb-5">
+          Upcoming This Week
+        </h2>
+        {upcomingOrders.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">
+            No deliveries in the next 7 days.
+          </p>
+        ) : (
           <div className="space-y-2">
-            {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+            {upcomingOrders.map((order) => (
+              <button
+                key={String(order.id)}
+                type="button"
+                onClick={() =>
+                  navigate({
+                    to: "/orders",
+                    search: { highlight: String(order.id) },
+                  })
+                }
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/20 hover:shadow-card transition-all text-left"
+              >
+                <div className="shrink-0 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    {order.deliveryDate
+                      ? new Date(order.deliveryDate).toLocaleDateString(
+                          "en-GB",
+                          { month: "short", day: "numeric" },
+                        )
+                      : "—"}
+                  </p>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {order.clientName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {order.productName}
+                  </p>
+                </div>
+                <div className="shrink-0 text-sm font-semibold text-foreground">
+                  {Number(order.price).toLocaleString()} MKD
+                </div>
+              </button>
             ))}
           </div>
-        ) : upcomingOrders.length === 0 ? (
-          <Card className="shadow-card border-border/50">
-            <CardContent className="p-6 text-center">
-              <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-20" />
-              <p className="text-sm text-muted-foreground">
-                No upcoming orders in the next 7 days
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="shadow-card border-border/50">
-            <CardContent className="p-0">
-              <div className="divide-y divide-border/50">
-                {upcomingOrders.map((order) => (
-                  <button
-                    type="button"
-                    key={String(order.id)}
-                    onClick={() =>
-                      navigate({
-                        to: "/orders",
-                        search: { highlight: String(order.id) },
-                      })
-                    }
-                    className="w-full text-left flex items-center justify-between px-5 py-3.5 hover:bg-accent/20 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="shrink-0 text-center">
-                        <p className="text-xs font-semibold text-primary">
-                          {order.deliveryDate
-                            ? new Date(order.deliveryDate).toLocaleDateString(
-                                "en-GB",
-                                { day: "2-digit", month: "short" },
-                              )
-                            : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {order.clientName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {order.productName}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-foreground">
-                        {Number(order.price).toLocaleString()} MKD
-                      </span>
-                      <StatusBadge status={order.status} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         )}
       </section>
     </div>
-  );
-}
-
-export function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    New: "bg-blue-50 text-blue-700 border-blue-100",
-    "In Progress": "bg-amber-50 text-amber-700 border-amber-100",
-    Ready: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    Delivered: "bg-secondary text-secondary-foreground border-border",
-    Cancelled: "bg-destructive/10 text-destructive border-destructive/20",
-  };
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-        map[status] ?? "bg-muted text-muted-foreground border-border"
-      }`}
-    >
-      {status}
-    </span>
   );
 }
