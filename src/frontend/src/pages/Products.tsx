@@ -102,6 +102,7 @@ export default function Products() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<bigint | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [selectedDescription, setSelectedDescription] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const isEditing = editingId !== null;
@@ -127,6 +128,7 @@ export default function Products() {
   function openAdd() {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setSelectedDescription("");
     setDialogOpen(true);
   }
 
@@ -138,6 +140,7 @@ export default function Products() {
     costPrice: bigint;
   }) {
     setEditingId(product.id);
+    setSelectedDescription("");
     setForm({
       name: product.name,
       category: product.category as ProductCategory,
@@ -167,6 +170,7 @@ export default function Products() {
     }
     setDialogOpen(false);
     setEditingId(null);
+    setSelectedDescription("");
   }
 
   function confirmDelete(id: string) {
@@ -176,6 +180,14 @@ export default function Products() {
   }
 
   const isPending = addProduct.isPending || updateProduct.isPending;
+
+  // Group products by category for display
+  const grouped = CATEGORIES.map((cat) => ({
+    category: cat,
+    items: products
+      .filter((p) => p.category === cat)
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
@@ -235,21 +247,23 @@ export default function Products() {
                   </span>
                 </p>
               </div>
-              <div className="p-2.5 rounded-lg bg-secondary">
-                <TrendingUp className="w-5 h-5 text-chart-3" />
+              <div className="p-2.5 rounded-lg bg-accent/50">
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Product grid */}
+      {/* Product list — loading */}
       {isLoading ? (
-        <div
-          data-ocid="products.loading_state"
-          className="text-center py-20 text-muted-foreground"
-        >
-          <p className="text-sm">Loading products...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="h-40 rounded-2xl bg-muted/40 animate-pulse"
+            />
+          ))}
         </div>
       ) : products.length === 0 ? (
         <div
@@ -257,96 +271,114 @@ export default function Products() {
           className="text-center py-20 text-muted-foreground"
         >
           <LayoutGrid className="w-12 h-12 mx-auto mb-4 opacity-20" />
-          <p className="font-display text-xl mb-1">No products yet</p>
-          <p className="text-sm">
-            Add your first product to build your catalogue.
-          </p>
+          <p className="font-display text-xl mb-2">Your catalogue is empty</p>
+          <p className="text-sm mb-6">Add your first product to get started</p>
+          <Button onClick={openAdd} className="gap-2">
+            <PackagePlus className="w-4 h-4" />
+            Add First Product
+          </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product, idx) => {
-            const price = Number(product.basePrice);
-            const cost = Number(product.costPrice);
-            const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-            const categoryColor =
-              CATEGORY_COLORS[product.category] ??
-              "bg-muted/10 text-muted-foreground border-muted/20";
-            const productId = String(product.id);
-            return (
-              <div
-                key={productId}
-                data-ocid={`products.item.${idx + 1}`}
-                className="group bg-card border border-border/50 hover:border-primary/30 hover:shadow-card rounded-xl p-5 transition-all duration-200"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${categoryColor}`}
-                  >
-                    {product.category}
-                  </Badge>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      data-ocid={`products.edit_button.${idx + 1}`}
-                      onClick={() => openEdit(product)}
-                      title="Edit product"
-                      className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+        <div className="space-y-8">
+          {grouped.map(({ category, items }) => (
+            <div key={category}>
+              <h2 className="font-display text-sm font-medium tracking-widest uppercase text-muted-foreground mb-4 flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={`text-xs ${CATEGORY_COLORS[category] ?? ""}`}
+                >
+                  {category}
+                </Badge>
+                <span className="text-xs text-muted-foreground/60">
+                  {items.length} item{items.length !== 1 ? "s" : ""}
+                </span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {items.map((product, idx) => {
+                  const price = Number(product.basePrice);
+                  const cost = Number(product.costPrice);
+                  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+                  const productId = String(product.id);
+                  return (
+                    <div
+                      key={productId}
+                      data-ocid={`products.item.${idx + 1}`}
+                      className="bg-card border border-border/50 rounded-2xl p-5 shadow-card hover:shadow-md transition-shadow"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      data-ocid={`products.delete_button.${idx + 1}`}
-                      onClick={() => setDeleteConfirmId(productId)}
-                      title="Delete product"
-                      className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+                      <div className="flex items-start justify-between mb-3">
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${CATEGORY_COLORS[product.category] ?? ""}`}
+                        >
+                          {product.category}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            data-ocid={`products.edit_button.${idx + 1}`}
+                            onClick={() => openEdit(product)}
+                            title="Edit product"
+                            className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            data-ocid={`products.delete_button.${idx + 1}`}
+                            onClick={() => setDeleteConfirmId(productId)}
+                            title="Delete product"
+                            className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
 
-                <h3 className="font-display text-base font-semibold text-foreground mb-4 leading-snug">
-                  {product.name}
-                </h3>
+                      <h3 className="font-display text-base font-semibold text-foreground mb-4 leading-snug">
+                        {product.name}
+                      </h3>
 
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
-                      Price
-                    </p>
-                    <p className="text-sm font-semibold text-foreground">
-                      {price.toLocaleString()} MKD
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
-                      Cost
-                    </p>
-                    <p className="text-sm font-semibold text-muted-foreground">
-                      {cost.toLocaleString()} MKD
-                    </p>
-                  </div>
-                </div>
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                            Price
+                          </p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {price.toLocaleString()} MKD
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                            Cost
+                          </p>
+                          <p className="text-sm font-semibold text-muted-foreground">
+                            {cost.toLocaleString()} MKD
+                          </p>
+                        </div>
+                      </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-border/40">
-                  <span className="text-xs text-muted-foreground">Margin</span>
-                  <span
-                    className={`text-xs font-semibold ${
-                      margin >= 50
-                        ? "text-chart-3"
-                        : margin >= 35
-                          ? "text-chart-2"
-                          : "text-destructive"
-                    }`}
-                  >
-                    {margin.toFixed(1)}%
-                  </span>
-                </div>
+                      <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                        <span className="text-xs text-muted-foreground">
+                          Margin
+                        </span>
+                        <span
+                          className={`text-xs font-semibold ${
+                            margin >= 50
+                              ? "text-chart-3"
+                              : margin >= 35
+                                ? "text-chart-2"
+                                : "text-destructive"
+                          }`}
+                        >
+                          {margin.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 
@@ -355,11 +387,14 @@ export default function Products() {
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) setEditingId(null);
+          if (!open) {
+            setEditingId(null);
+            setSelectedDescription("");
+          }
         }}
       >
         <DialogContent
-          className="max-w-md flex flex-col max-h-[90dvh]"
+          className="w-full max-w-md flex flex-col max-h-[90dvh]"
           data-ocid="products.dialog"
         >
           <DialogHeader className="flex-shrink-0">
@@ -369,24 +404,13 @@ export default function Products() {
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
             <div className="space-y-1.5">
-              <Label htmlFor="product-name">Product Name</Label>
-              <Input
-                id="product-name"
-                data-ocid="products.name.input"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                placeholder="e.g. Dark Chocolate Truffle Box"
-              />
-            </div>
-            <div className="space-y-1.5">
               <Label>Category</Label>
               <Select
                 value={form.category}
-                onValueChange={(v) =>
-                  setForm((f) => ({ ...f, category: v as ProductCategory }))
-                }
+                onValueChange={(v) => {
+                  setForm((f) => ({ ...f, category: v as ProductCategory }));
+                  setSelectedDescription("");
+                }}
               >
                 <SelectTrigger data-ocid="products.category.select">
                   <SelectValue />
@@ -399,6 +423,67 @@ export default function Products() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Pick from existing descriptions in this category */}
+            {!isEditing &&
+              products.filter((p) => p.category === form.category).length >
+                0 && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+                    Pick from existing descriptions
+                  </Label>
+                  <Select
+                    value={selectedDescription || "__none__"}
+                    onValueChange={(v) => {
+                      setSelectedDescription(v === "__none__" ? "" : v);
+                      if (v && v !== "__none__") {
+                        const found = products.find(
+                          (p) => p.name === v && p.category === form.category,
+                        );
+                        if (found) {
+                          setForm((f) => ({
+                            ...f,
+                            name: found.name,
+                            basePrice: String(found.basePrice),
+                            costPrice: String(found.costPrice),
+                          }));
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger data-ocid="products.existing_description.select">
+                      <SelectValue placeholder="Select existing or type new below..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">
+                        — Type new description below —
+                      </SelectItem>
+                      {products
+                        .filter((p) => p.category === form.category)
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((p) => (
+                          <SelectItem key={String(p.id)} value={p.name}>
+                            {p.name} — {Number(p.basePrice).toLocaleString()}{" "}
+                            MKD
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="product-name">Product Name / Description</Label>
+              <Input
+                id="product-name"
+                data-ocid="products.name.input"
+                value={form.name}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
+                placeholder="e.g. Dark Chocolate Truffle Box"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -447,6 +532,7 @@ export default function Products() {
               onClick={() => {
                 setDialogOpen(false);
                 setEditingId(null);
+                setSelectedDescription("");
               }}
               disabled={isPending}
             >

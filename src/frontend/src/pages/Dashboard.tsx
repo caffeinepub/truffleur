@@ -79,35 +79,26 @@ export default function Dashboard() {
       label: "Total Clients",
       value: stats.totalClients,
       icon: Users,
-      color: "text-primary",
-      bg: "bg-accent/50",
     },
     {
       label: "Active Orders",
       value: stats.activeOrders,
       icon: ShoppingBag,
-      color: "text-chart-2",
-      bg: "bg-secondary",
     },
     {
       label: "Weekly Sales",
       value: `${stats.weeklySales.toLocaleString()} MKD`,
       icon: TrendingUp,
-      color: "text-chart-1",
-      bg: "bg-accent/50",
       wide: true,
     },
     {
       label: "Daily Sales",
       value: `${stats.dailySales.toLocaleString()} MKD`,
       icon: TrendingUp,
-      color: "text-chart-3",
-      bg: "bg-secondary",
       wide: true,
     },
   ];
 
-  // Quick Actions: VIP replaced by Expenses; Suppliers and Reports switched
   const quickActions = [
     {
       label: "Add Client",
@@ -148,7 +139,6 @@ export default function Dashboard() {
     },
   ];
 
-  // Upcoming orders for the Calendar section (next 7 days, active only)
   const upcomingOrders = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -171,56 +161,64 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center gap-4">
-          {/* Logo */}
-          <img
-            src="/assets/generated/truffleur-logo-v3-transparent.dim_400x200.png"
-            alt="Truffleur"
-            className="h-16 w-auto object-contain"
-            style={{
-              maxWidth: "180px",
-              filter:
-                "drop-shadow(0 2px 8px rgba(180,150,60,0.3)) brightness(1.05)",
-            }}
-          />
-          <p
-            className="text-xs tracking-widest uppercase text-foreground/70 ml-1"
-            style={{
-              fontFamily: "'Courier New', 'Courier', monospace",
-              fontWeight: 500,
-              letterSpacing: "0.12em",
-            }}
-          >
-            {new Date().toLocaleDateString("en-GB", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </div>
-      </header>
-
-      {/* Banner */}
+      {/* Banner — full picture with text overlays only */}
       <section className="mb-10" data-ocid="dashboard.truffles.card">
         <div
           className="relative overflow-hidden rounded-2xl"
           style={{
-            minHeight: "160px",
+            minHeight: "200px",
             backgroundImage:
               "url('/assets/generated/banner-picnic-joy-v2.dim_1400x500.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
         >
-          <div className="relative flex items-center justify-center py-12">
+          {/* Top overlay row: logo image left, date right */}
+          <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-5 pt-4 pointer-events-none">
+            {/* Logo image — top left, small, no background */}
+            <img
+              src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
+              alt="Truffleur"
+              style={{
+                height: "44px",
+                width: "auto",
+                objectFit: "contain",
+                borderRadius: "4px",
+              }}
+            />
+
+            {/* Date — top right, same style as View Products */}
+            <span
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontWeight: 300,
+                fontStyle: "italic",
+                fontSize: "clamp(0.65rem, 1.8vw, 0.85rem)",
+                letterSpacing: "0.08em",
+                color: "rgba(255, 252, 230, 0.97)",
+                textShadow:
+                  "0 1px 8px rgba(0,0,0,0.7), 0 0px 3px rgba(0,0,0,0.6)",
+                textAlign: "right",
+                lineHeight: 1.3,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {new Date().toLocaleDateString("en-GB", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+
+          {/* View Products button centered */}
+          <div className="relative flex items-center justify-center py-16">
             <button
               type="button"
               data-ocid="dashboard.truffles.button"
               onClick={() => navigate({ to: "/products" })}
-              className="transition-all duration-200 hover:scale-105"
+              className="transition-all duration-200 hover:scale-105 pointer-events-auto"
               style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
                 fontWeight: 300,
@@ -269,8 +267,8 @@ export default function Dashboard() {
                       </p>
                     )}
                   </div>
-                  <div className={`p-2.5 rounded-lg ${stat.bg}`}>
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                  <div className="p-2.5 rounded-lg bg-accent/50">
+                    <stat.icon className="w-5 h-5 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -293,7 +291,7 @@ export default function Dashboard() {
               onClick={action.onClick}
               className="flex flex-col items-center gap-2.5 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-card transition-all duration-200 text-center group min-h-[88px] justify-center"
             >
-              <div className="p-2.5 rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors">
+              <div className="p-2.5 rounded-lg bg-accent/50 group-hover:bg-primary/10 transition-colors">
                 <action.icon className="w-5 h-5 text-primary" />
               </div>
               <span className="text-xs font-medium text-foreground/80 leading-tight">
@@ -325,17 +323,23 @@ export default function Dashboard() {
                     search: { highlight: String(order.id) },
                   })
                 }
-                className="w-full flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/20 hover:shadow-card transition-all text-left"
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:border-chart-3/30 hover:shadow-card transition-all text-left"
               >
-                <div className="shrink-0 text-center">
-                  <p className="text-xs text-muted-foreground">
+                {/* Green date box on the left */}
+                <div className="w-10 h-10 rounded-lg bg-chart-3/10 flex flex-col items-center justify-center shrink-0">
+                  <span className="text-[10px] font-medium text-chart-3 leading-none uppercase">
                     {order.deliveryDate
                       ? new Date(order.deliveryDate).toLocaleDateString(
                           "en-GB",
-                          { month: "short", day: "numeric" },
+                          { month: "short" },
                         )
+                      : ""}
+                  </span>
+                  <span className="font-display text-base font-bold text-chart-3 leading-none">
+                    {order.deliveryDate
+                      ? new Date(order.deliveryDate).getDate()
                       : "—"}
-                  </p>
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">

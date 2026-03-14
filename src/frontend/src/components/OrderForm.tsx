@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Client, Order } from "../backend.d";
 import {
@@ -22,6 +22,38 @@ import {
   useGetAllProducts,
   useUpdateOrder,
 } from "../hooks/useQueries";
+
+let rowIdCounter = 0;
+
+interface ProductRow {
+  id: number;
+  productName: string;
+  quantity: string;
+}
+
+function makeRow(productName = "", quantity = "1"): ProductRow {
+  return { id: ++rowIdCounter, productName, quantity };
+}
+
+function parseProductRows(raw: string): ProductRow[] {
+  if (!raw) return [makeRow()];
+  const parts = raw.split(", ");
+  const rows = parts
+    .map((part) => {
+      const match = part.match(/^(.+) x(\d+)$/);
+      if (match) return makeRow(match[1], match[2]);
+      return makeRow(part, "1");
+    })
+    .filter((r) => r.productName);
+  return rows.length > 0 ? rows : [makeRow()];
+}
+
+function encodeProductRows(rows: ProductRow[]): string {
+  return rows
+    .filter((r) => r.productName.trim())
+    .map((r) => `${r.productName} x${r.quantity || "1"}`)
+    .join(", ");
+}
 
 interface OrderFormProps {
   defaultClientName?: string;
@@ -39,6 +71,7 @@ export default function OrderForm({
   const addClient = useAddClient();
   const queryClient = useQueryClient();
   const { data: clients = [] } = useGetAllClients();
+  // Always fetch live products from backend — auto-updates when new products are added
   const { data: products = [] } = useGetAllProducts();
   const isEditing = !!editOrder;
 
@@ -49,10 +82,12 @@ export default function OrderForm({
         `${c.firstName} ${c.lastName}`.toLowerCase() === name.toLowerCase(),
     );
 
+  const [productRows, setProductRows] = useState<ProductRow[]>(() =>
+    parseProductRows(editOrder?.productName ?? ""),
+  );
+
   const [form, setForm] = useState({
     clientName: getInitialClientName(),
-    productName: editOrder?.productName ?? "",
-    quantity: editOrder ? String(editOrder.quantity) : "1",
     occasion: editOrder?.occasion ?? "",
     deliveryDate: editOrder?.deliveryDate ?? "",
     deliveryAddress: editOrder?.isPickup
@@ -65,7 +100,6 @@ export default function OrderForm({
     notes: editOrder?.notes ?? "",
   });
 
-  // useNewClient: true = show text input for a new client name
   const [useNewClient, setUseNewClient] = useState(() => {
     const name = getInitialClientName();
     if (!name) return false;
@@ -76,8 +110,53 @@ export default function OrderForm({
     ? updateOrder.isPending
     : addOrder.isPending || addClient.isPending;
 
+  const addProductRow = () => {
+    if (productRows.length >= 5) return;
+    setProductRows((prev) => [...prev, makeRow()]);
+  };
+
+  const removeProductRow = (id: number) => {
+    setProductRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const updateProductRow = (
+    id: number,
+    key: keyof Omit<ProductRow, "id">,
+    val: string,
+  ) => {
+    setProductRows((prev) =>
+      prev.map((row) => (row.id === id ? { ...row, [key]: val } : row)),
+    );
+  };
+
+  const sortedUniqueProducts = useMemo(() => {
+    const seen = new Set<string>();
+    return [...products]
+      .sort(
+        (a, b) =>
+          a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
+      )
+      .filter((p) => {
+        const key = p.name.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }, [products]);
+
+  const handleProductSelect = (rowId: number, productName: string) => {
+    updateProductRow(rowId, "productName", productName);
+    if (productRows.length === 1) {
+      const found = products.find((p) => p.name === productName);
+      if (found && !form.price) {
+        setForm((prev) => ({ ...prev, price: String(found.basePrice) }));
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const encodedProducts = encodeProductRows(productRows);
     let matchedClient = clients.find(
       (c) =>
         `${c.firstName} ${c.lastName}`.toLowerCase() ===
@@ -90,8 +169,8 @@ export default function OrderForm({
           id: editOrder.id,
           clientId: matchedClient?.id ?? editOrder.clientId,
           clientName: form.clientName,
-          productName: form.productName,
-          quantity: BigInt(form.quantity || "1"),
+          productName: encodedProducts,
+          quantity: BigInt(1),
           occasion: form.occasion,
           deliveryDate: form.deliveryDate,
           deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
@@ -103,7 +182,6 @@ export default function OrderForm({
         });
         toast.success("Order updated successfully");
       } else {
-        // Auto-create client if the name is new
         let clientId = matchedClient?.id ?? 0n;
         if (!matchedClient && form.clientName.trim()) {
           const nameParts = form.clientName.trim().split(" ");
@@ -122,7 +200,6 @@ export default function OrderForm({
             notes: "",
             isVip: false,
           });
-          // Refetch clients to get the newly created client's id
           await queryClient.refetchQueries({ queryKey: ["clients"] });
           const updatedClients =
             queryClient.getQueryData<Client[]>(["clients"]) ?? [];
@@ -138,8 +215,8 @@ export default function OrderForm({
         await addOrder.mutateAsync({
           clientId,
           clientName: form.clientName,
-          productName: form.productName,
-          quantity: BigInt(form.quantity || "1"),
+          productName: encodedProducts,
+          quantity: BigInt(1),
           occasion: form.occasion,
           deliveryDate: form.deliveryDate,
           deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
@@ -185,7 +262,7 @@ export default function OrderForm({
             <SelectTrigger data-ocid="order_form.client.select">
               <SelectValue placeholder="Select a client..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-60 overflow-y-auto">
               {clients.map((c) => (
                 <SelectItem
                   key={String(c.id)}
@@ -225,52 +302,85 @@ export default function OrderForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Product dropdown linked to catalog */}
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Product
-          </Label>
-          {products.length > 0 ? (
-            <Select
-              value={form.productName}
-              onValueChange={(v) => {
-                const selectedProduct = products.find((p) => p.name === v);
-                setForm((prev) => ({
-                  ...prev,
-                  productName: v,
-                  price: selectedProduct
-                    ? String(selectedProduct.basePrice)
-                    : prev.price,
-                }));
-              }}
-            >
-              <SelectTrigger data-ocid="order_form.product.select">
-                <SelectValue placeholder="Select a product..." />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={String(p.id)} value={p.name}>
-                    {p.name} — {Number(p.basePrice).toLocaleString()} MKD
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              data-ocid="order_form.product_name.input"
-              placeholder="Luxury Truffle Box"
-              required
-              {...field("productName")}
-            />
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Quantity
-          </Label>
-          <Input type="number" min="1" placeholder="1" {...field("quantity")} />
-        </div>
+      {/* Product rows — live from backend, scrollable dropdown */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+          Products
+        </Label>
+        {productRows.map((row, idx) => (
+          <div key={row.id} className="flex gap-2 items-center">
+            <div className="flex-1">
+              {products.length > 0 ? (
+                <Select
+                  value={row.productName}
+                  onValueChange={(v) => handleProductSelect(row.id, v)}
+                >
+                  <SelectTrigger
+                    data-ocid={`order_form.product_row.select.${idx + 1}`}
+                  >
+                    <SelectValue placeholder="Select a product..." />
+                  </SelectTrigger>
+                  {/* max-h + overflow ensures scrollability for long product lists */}
+                  <SelectContent className="max-h-56 overflow-y-auto">
+                    {sortedUniqueProducts.map((p) => (
+                      <SelectItem key={String(p.id)} value={p.name}>
+                        <span className="text-xs text-muted-foreground mr-1.5">
+                          [{p.category}]
+                        </span>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  data-ocid={`order_form.product_row.select.${idx + 1}`}
+                  placeholder="Product name (add products in catalogue first)"
+                  value={row.productName}
+                  onChange={(e) =>
+                    updateProductRow(row.id, "productName", e.target.value)
+                  }
+                />
+              )}
+            </div>
+            <div className="w-20">
+              <Input
+                data-ocid={`order_form.product_row.qty.${idx + 1}`}
+                type="number"
+                min="1"
+                placeholder="1"
+                value={row.quantity}
+                onChange={(e) =>
+                  updateProductRow(row.id, "quantity", e.target.value)
+                }
+              />
+            </div>
+            {productRows.length > 1 && (
+              <button
+                type="button"
+                data-ocid={`order_form.product_row.remove_button.${idx + 1}`}
+                onClick={() => removeProductRow(row.id)}
+                className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Remove product row"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        ))}
+        {productRows.length < 5 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-ocid="order_form.add_product_row.button"
+            onClick={addProductRow}
+            className="w-full mt-1 border-dashed text-muted-foreground hover:text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Add product
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

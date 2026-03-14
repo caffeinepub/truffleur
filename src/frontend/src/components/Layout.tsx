@@ -1,4 +1,10 @@
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -18,9 +24,11 @@ import {
   ShoppingBag,
   Users,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import OrderForm from "./OrderForm";
 import { lockApp } from "./PasswordGate";
+
+const SESSION_KEY = "truffleur_session_active";
 
 const primaryNavItems = [
   {
@@ -82,9 +90,45 @@ const allNavItems = [...primaryNavItems, ...secondaryNavItems];
 export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  // Auto New Order popup: shows once per browser session (fresh open)
+  const [newOrderOpen, setNewOrderOpen] = useState(false);
+
+  useEffect(() => {
+    const alreadyShown = sessionStorage.getItem(SESSION_KEY);
+    if (!alreadyShown) {
+      // Small delay so the app fully loads before the dialog appears
+      const timer = setTimeout(() => {
+        setNewOrderOpen(true);
+        sessionStorage.setItem(SESSION_KEY, "1");
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-transparent">
+      {/* Auto New Order popup — shown on every fresh app open */}
+      <Dialog open={newOrderOpen} onOpenChange={setNewOrderOpen}>
+        <DialogContent
+          className="w-full max-w-lg max-h-[90dvh] flex flex-col"
+          data-ocid="layout.new_order.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">
+              New Order
+            </DialogTitle>
+          </DialogHeader>
+          <div
+            className="overflow-y-auto flex-1 pr-1"
+            style={{ maxHeight: "calc(90dvh - 80px)" }}
+          >
+            <div className="pb-4">
+              <OrderForm onSuccess={() => setNewOrderOpen(false)} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Desktop Sidebar */}
       <aside
         className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 z-30"
@@ -98,12 +142,13 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="px-7 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/generated/truffleur-logo-v3-transparent.dim_400x200.png"
+              src="/assets/generated/truffleur-logo-nobg.dim_400x200.png"
               alt="Truffleur"
               className="h-12 w-auto object-contain"
               style={{
                 maxWidth: "160px",
-                filter: "brightness(1.05)",
+                filter:
+                  "brightness(1.1) drop-shadow(0 1px 4px rgba(180,150,60,0.4))",
               }}
             />
             {/* Lock button */}
@@ -292,7 +337,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </Sheet>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64 pb-20 md:pb-0 min-h-screen">
+      <main className="flex-1 md:ml-64 pb-20 md:pb-0 min-h-screen overflow-y-auto">
         {children}
       </main>
     </div>

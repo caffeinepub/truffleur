@@ -140,7 +140,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-4 md:p-10 max-w-6xl mx-auto animate-fade-in">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto animate-fade-in pb-4">
       <header className="mb-8">
         <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-2">
           Schedule
@@ -153,7 +153,7 @@ export default function Calendar() {
         </p>
       </header>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-8 pb-6">
         <div className="flex-1 min-w-0">
           {/* Month nav */}
           <div className="flex items-center justify-between mb-5">
@@ -403,7 +403,7 @@ export default function Calendar() {
               <p className="text-sm">No upcoming deliveries</p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[600px]">
+            <ScrollArea className="max-h-[500px] lg:max-h-[70vh]">
               <div className="space-y-2 pr-2">
                 {upcoming.map((ev, idx) => {
                   const evDate = new Date(ev.date);

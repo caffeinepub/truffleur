@@ -179,8 +179,10 @@ export default function Orders() {
     return a.deliveryDate.localeCompare(b.deliveryDate);
   });
 
-  // Sort history orders by delivery date (descending — most recent first)
+  // Sort history: Delivered first, Cancelled last; within each group by date descending
   const sortedHistory = [...historyOrders].sort((a, b) => {
+    if (a.status === "Cancelled" && b.status !== "Cancelled") return 1;
+    if (b.status === "Cancelled" && a.status !== "Cancelled") return -1;
     if (!a.deliveryDate && !b.deliveryDate) return 0;
     if (!a.deliveryDate) return 1;
     if (!b.deliveryDate) return -1;
@@ -225,7 +227,7 @@ export default function Orders() {
                 Add Order
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+            <DialogContent className="w-full max-w-lg max-h-[90dvh] flex flex-col">
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">
                   New Order
@@ -269,7 +271,7 @@ export default function Orders() {
           if (!open) setEditOrder(null);
         }}
       >
-        <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+        <DialogContent className="w-full max-w-lg max-h-[90dvh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">
               Edit Order
