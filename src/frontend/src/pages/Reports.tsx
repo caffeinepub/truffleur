@@ -67,6 +67,11 @@ const barChartConfig: ChartConfig = {
   },
 };
 
+// Safe number formatter — converts BigInt/number to full integer with comma thousands separator
+function fmtMKD(n: number | bigint): string {
+  return Math.round(Number(n)).toLocaleString("de-DE");
+}
+
 // Parse product rows from encoded string like "Product A x2, Product B x1"
 function parseProductEntries(
   productName: string,
@@ -125,7 +130,6 @@ export default function Reports() {
   );
 
   // Monthly revenue chart always shows last 6 months of ALL delivered orders
-  // (independent of period filter — so it doesn't go blank when viewing "This Week")
   const monthlyRevenue = useMemo(() => {
     const now = new Date();
     const result: { month: string; revenue: number }[] = [];
@@ -134,7 +138,6 @@ export default function Reports() {
       const revenue = orders
         .filter((o) => {
           if (o.status !== "Delivered") return false;
-          // Use deliveryDate for monthly grouping (more accurate than createdAt)
           const dateStr = o.deliveryDate || "";
           if (!dateStr) return false;
           const od = new Date(dateStr);
@@ -182,13 +185,11 @@ export default function Reports() {
     for (const o of filteredOrders) {
       const entries = parseProductEntries(o.productName);
       if (entries.length === 0) continue;
-      // Distribute revenue proportionally if multiple products
       const totalQty = entries.reduce((s, e) => s + e.qty, 0);
       for (const entry of entries) {
         const key = entry.name.toLowerCase();
         if (!map[key]) map[key] = { name: entry.name, count: 0, revenue: 0 };
         map[key].count += entry.qty;
-        // Allocate revenue proportionally by quantity share
         map[key].revenue += Math.round(
           (Number(o.price) * entry.qty) / totalQty,
         );
@@ -214,37 +215,31 @@ export default function Reports() {
   function exportReportCSV() {
     const lines: string[] = [];
     lines.push(
-      `"TRUFFLEUR Report — ${period === "all" ? "All Time" : period}","${new Date().toLocaleDateString()}"`,
+      `"TRUFFLEUR Report — ${period === "all" ? "All Time" : period}","${new Date().toLocaleDateString("en-US")}"`,
     );
     lines.push("");
     lines.push('"Summary"');
-    lines.push(`"Total Revenue","${totalRevenue.toLocaleString()} MKD"`);
+    lines.push(`"Total Revenue","${fmtMKD(totalRevenue)} MKD"`);
     lines.push(`"Total Orders","${filteredOrders.length}"`);
-    lines.push(
-      `"Avg Order Value","${Math.round(avgOrderValue).toLocaleString()} MKD"`,
-    );
+    lines.push(`"Avg Order Value","${fmtMKD(Math.round(avgOrderValue))} MKD"`);
     lines.push(`"Active Clients","${activeClients}"`);
     lines.push("");
     lines.push('"Top Clients"');
     lines.push('"Rank","Client","Orders","Total (MKD)"');
     topClients.forEach((c, i) => {
-      lines.push(
-        `"${i + 1}","${c.name}","${c.count}","${c.total.toLocaleString()}"`,
-      );
+      lines.push(`"${i + 1}","${c.name}","${c.count}","${fmtMKD(c.total)}"`);
     });
     lines.push("");
     lines.push('"Best-Selling Products"');
     lines.push('"Rank","Product","Qty Sold","Revenue (MKD)"');
     bestProducts.forEach((p, i) => {
-      lines.push(
-        `"${i + 1}","${p.name}","${p.count}","${p.revenue.toLocaleString()}"`,
-      );
+      lines.push(`"${i + 1}","${p.name}","${p.count}","${fmtMKD(p.revenue)}"`);
     });
     lines.push("");
     lines.push('"Monthly Revenue (last 6 months)"');
     lines.push('"Month","Revenue (MKD)"');
     for (const m of monthlyRevenue) {
-      lines.push(`"${m.month}","${m.revenue.toLocaleString()}"`);
+      lines.push(`"${m.month}","${fmtMKD(m.revenue)}"`);
     }
 
     const csv = lines.join("\n");
@@ -261,28 +256,28 @@ export default function Reports() {
   const summaryStats = [
     {
       label: "Total Revenue",
-      value: `${totalRevenue.toLocaleString()} MKD`,
+      value: `${fmtMKD(totalRevenue)} MKD`,
       icon: TrendingUp,
       color: "text-chart-1",
       bg: "bg-accent/50",
     },
     {
       label: "Total Orders",
-      value: filteredOrders.length,
+      value: String(filteredOrders.length),
       icon: ShoppingBag,
       color: "text-chart-2",
       bg: "bg-secondary",
     },
     {
       label: "Avg. Order Value",
-      value: `${Math.round(avgOrderValue).toLocaleString()} MKD`,
+      value: `${fmtMKD(Math.round(avgOrderValue))} MKD`,
       icon: BarChart3,
       color: "text-chart-3",
       bg: "bg-secondary",
     },
     {
       label: "Active Clients",
-      value: activeClients,
+      value: String(activeClients),
       icon: Users,
       color: "text-chart-5",
       bg: "bg-accent/50",
@@ -346,22 +341,24 @@ export default function Reports() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {summaryStats.map((stat) => (
           <Card key={stat.label} className="shadow-card border-border/50">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-2 leading-tight">
                     {stat.label}
                   </p>
                   {isLoading ? (
-                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-7 w-20" />
                   ) : (
-                    <p className="font-display text-2xl font-semibold text-foreground">
+                    <p className="font-display text-base sm:text-lg md:text-xl font-semibold text-foreground break-words leading-tight">
                       {stat.value}
                     </p>
                   )}
                 </div>
-                <div className={`p-2.5 rounded-lg ${stat.bg}`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                <div className={`p-2 md:p-2.5 rounded-lg ${stat.bg} shrink-0`}>
+                  <stat.icon
+                    className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -548,7 +545,7 @@ export default function Reports() {
                         {c.count}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-foreground text-right pr-5">
-                        {c.total.toLocaleString()} MKD
+                        {fmtMKD(c.total)} MKD
                       </TableCell>
                     </TableRow>
                   ))}
@@ -614,7 +611,7 @@ export default function Reports() {
                         {p.count}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-foreground text-right pr-5">
-                        {p.revenue.toLocaleString()} MKD
+                        {fmtMKD(p.revenue)} MKD
                       </TableCell>
                     </TableRow>
                   ))}

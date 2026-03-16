@@ -12,7 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Client, Order } from "../backend.d";
 import {
@@ -22,7 +22,7 @@ import {
   useGetAllProducts,
   useUpdateOrder,
 } from "../hooks/useQueries";
-import { getHiddenIds, normaliseCat } from "../pages/Products";
+import { getHiddenIds } from "../pages/Products";
 
 // Category display order — handles both legacy singular and new plural names
 const CATEGORY_ORDER = [
@@ -80,6 +80,162 @@ interface OrderFormProps {
   editOrder?: Order;
 }
 
+// ── ProductCombobox ────────────────────────────────────────────────────────────
+// Input with dropdown suggestion list — matches by includes (case-insensitive)
+interface ProductComboboxProps {
+  value: string;
+  products: Array<{ id: number | bigint; name: string; category: string }>;
+  onChange: (value: string) => void;
+  onSelect: (productName: string) => void;
+  placeholder?: string;
+  "data-ocid"?: string;
+}
+
+function ProductCombobox({
+  value,
+  products,
+  onChange,
+  onSelect,
+  placeholder,
+  "data-ocid": dataOcid,
+}: ProductComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  // Sync external value changes (e.g., reset when product deleted)
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+        setActiveIndex(-1);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Filter by includes, case-insensitive, max 8 results shown initially but list is scrollable
+  const suggestions = useMemo(() => {
+    if (!inputValue.trim()) return products.slice(0, 50);
+    const q = inputValue.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q),
+    );
+  }, [inputValue, products]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setInputValue(v);
+    onChange(v);
+    setOpen(true);
+    setActiveIndex(-1);
+    // If cleared, reset price
+    if (!v.trim()) {
+      onSelect("");
+    }
+  };
+
+  const handleSelect = (productName: string) => {
+    setInputValue(productName);
+    onSelect(productName);
+    setOpen(false);
+    setActiveIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open) {
+      if (e.key === "ArrowDown" || e.key === "Enter") {
+        setOpen(true);
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (activeIndex >= 0 && suggestions[activeIndex]) {
+        e.preventDefault();
+        handleSelect(suggestions[activeIndex].name);
+      } else if (e.key === "Enter") {
+        setOpen(false);
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setActiveIndex(-1);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <Input
+        ref={inputRef}
+        data-ocid={dataOcid}
+        placeholder={placeholder}
+        value={inputValue}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={handleInputChange}
+        onFocus={() => {
+          setOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+      />
+      {open && suggestions.length > 0 && (
+        <div
+          className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-border rounded-md shadow-lg overflow-y-auto"
+          style={{ maxHeight: "14rem" }}
+          onMouseDown={(e) => e.preventDefault()} // keep input focus
+        >
+          {suggestions.map((p, idx) => (
+            <button
+              key={String(p.id)}
+              type="button"
+              aria-selected={idx === activeIndex}
+              className={`w-full text-left px-3 py-2 text-sm cursor-pointer select-none flex items-center gap-2 transition-colors ${
+                idx === activeIndex
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted/60"
+              }`}
+              onMouseEnter={() => setActiveIndex(idx)}
+              onMouseDown={() => handleSelect(p.name)}
+            >
+              <span className="text-xs text-muted-foreground font-medium shrink-0">
+                {p.category}
+              </span>
+              <span className="text-muted-foreground/40 shrink-0">•</span>
+              <span className="truncate">{p.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && suggestions.length === 0 && inputValue.trim() && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-border rounded-md shadow-lg">
+          <div className="px-3 py-2 text-sm text-muted-foreground">
+            No matching products
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 export default function OrderForm({
   defaultClientName = "",
   onSuccess,
@@ -120,17 +276,21 @@ export default function OrderForm({
     parseProductRows(editOrder?.productName ?? ""),
   );
 
-  // Reset product rows when a product is deleted — clear the row so it shows placeholder
+  // Reset product rows when a product is deleted
   useEffect(() => {
     const validNames = new Set(products.map((p) => p.name));
-    setProductRows((prev) =>
-      prev.map((row) => {
+    setProductRows((prev) => {
+      let changed = false;
+      const next = prev.map((row) => {
         if (!row.productName) return row;
-        if (!validNames.has(row.productName))
+        if (!validNames.has(row.productName)) {
+          changed = true;
           return { ...row, productName: "", unitPrice: 0 };
+        }
         return row;
-      }),
-    );
+      });
+      return changed ? next : prev;
+    });
   }, [products]);
 
   const [form, setForm] = useState({
@@ -159,7 +319,7 @@ export default function OrderForm({
     ? updateOrder.isPending
     : addOrder.isPending || addClient.isPending;
 
-  // Products sorted by CATEGORY_ORDER (handles both plural & legacy names), then by name
+  // Products sorted by CATEGORY_ORDER then by name, deduplicated
   const sortedUniqueProducts = useMemo(() => {
     const seen = new Set<string>();
     return [...products]
@@ -372,7 +532,7 @@ export default function OrderForm({
         </div>
       )}
 
-      {/* Product rows — unlimited, live from backend, sorted by category order */}
+      {/* Product rows — unlimited, combobox with dropdown suggestions */}
       <div className="space-y-2">
         <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
           Products
@@ -383,40 +543,43 @@ export default function OrderForm({
           return (
             <div key={row.id} className="space-y-1">
               <div className="flex gap-2 items-center">
-                <div className="flex-1">
-                  {products.length > 0 ? (
-                    <Select
-                      value={row.productName}
-                      onValueChange={(v) => handleProductSelect(row.id, v)}
-                    >
-                      <SelectTrigger
-                        data-ocid={`order_form.product_row.select.${idx + 1}`}
-                      >
-                        <SelectValue placeholder="Select a product..." />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-64 overflow-y-auto">
-                        {sortedUniqueProducts.map((p) => (
-                          <SelectItem key={String(p.id)} value={p.name}>
-                            <span className="text-xs text-muted-foreground mr-1.5">
-                              [{normaliseCat(p.category)}]
-                            </span>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      data-ocid={`order_form.product_row.select.${idx + 1}`}
-                      placeholder="Product name (add products in catalogue first)"
-                      value={row.productName}
-                      onChange={(e) =>
-                        updateProductRow(row.id, "productName", e.target.value)
+                <div className="flex-1 min-w-0">
+                  <ProductCombobox
+                    data-ocid={`order_form.product_row.select.${idx + 1}`}
+                    value={row.productName}
+                    products={sortedUniqueProducts}
+                    onChange={(v) => {
+                      updateProductRow(row.id, "productName", v);
+                      // Try to match exact product for price auto-fill as user types
+                      const exact = products.find(
+                        (p) => p.name.toLowerCase() === v.toLowerCase(),
+                      );
+                      if (exact) {
+                        updateProductRow(
+                          row.id,
+                          "unitPrice",
+                          Number(exact.basePrice),
+                        );
+                      } else if (!v.trim()) {
+                        updateProductRow(row.id, "unitPrice", 0);
                       }
-                    />
-                  )}
+                    }}
+                    onSelect={(v) => {
+                      if (v) {
+                        handleProductSelect(row.id, v);
+                      } else {
+                        updateProductRow(row.id, "productName", "");
+                        updateProductRow(row.id, "unitPrice", 0);
+                      }
+                    }}
+                    placeholder={
+                      sortedUniqueProducts.length > 0
+                        ? "Type to search products..."
+                        : "Add products in catalogue first"
+                    }
+                  />
                 </div>
-                <div className="w-20">
+                <div className="w-20 shrink-0">
                   <Input
                     data-ocid={`order_form.product_row.qty.${idx + 1}`}
                     type="number"
@@ -433,7 +596,7 @@ export default function OrderForm({
                     type="button"
                     data-ocid={`order_form.product_row.remove_button.${idx + 1}`}
                     onClick={() => removeProductRow(row.id)}
-                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors shrink-0"
                     aria-label="Remove product row"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -443,9 +606,9 @@ export default function OrderForm({
               {row.productName && row.unitPrice > 0 && (
                 <div className="text-right pr-1">
                   <span className="text-xs text-muted-foreground">
-                    {row.unitPrice.toLocaleString()} × {qty} ={" "}
+                    {row.unitPrice.toLocaleString("en-US")} × {qty} ={" "}
                     <span className="font-semibold text-foreground">
-                      {subtotal.toLocaleString()} MKD
+                      {subtotal.toLocaleString("en-US")} MKD
                     </span>
                   </span>
                 </div>
@@ -565,7 +728,7 @@ export default function OrderForm({
                 setPriceManual(String(computedTotal));
               }}
             >
-              Reset to auto ({computedTotal.toLocaleString()} MKD)
+              Reset to auto ({computedTotal.toLocaleString("en-US")} MKD)
             </button>
           )}
         </div>

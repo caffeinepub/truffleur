@@ -168,7 +168,6 @@ export default function Products() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<bigint | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [selectedDescription, setSelectedDescription] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const isEditing = editingId !== null;
@@ -194,7 +193,6 @@ export default function Products() {
   function openAdd() {
     setEditingId(null);
     setForm(EMPTY_FORM);
-    setSelectedDescription("");
     setDialogOpen(true);
   }
 
@@ -206,7 +204,6 @@ export default function Products() {
     costPrice: bigint;
   }) {
     setEditingId(product.id);
-    setSelectedDescription("");
     setForm({
       name: product.name,
       category: normaliseCat(product.category) as ProductCategory,
@@ -236,7 +233,6 @@ export default function Products() {
     }
     setDialogOpen(false);
     setEditingId(null);
-    setSelectedDescription("");
   }
 
   function confirmDelete(id: string) {
@@ -312,7 +308,7 @@ export default function Products() {
                   Catalogue Value
                 </p>
                 <p className="font-display text-3xl font-semibold text-foreground">
-                  {totalCatalogValue.toLocaleString()}{" "}
+                  {totalCatalogValue.toLocaleString("en-US")}{" "}
                   <span className="text-sm font-normal text-muted-foreground">
                     MKD
                   </span>
@@ -435,7 +431,7 @@ export default function Products() {
                             Price
                           </p>
                           <p className="text-sm font-semibold text-foreground">
-                            {price.toLocaleString()} MKD
+                            {price.toLocaleString("en-US")} MKD
                           </p>
                         </div>
                         <div>
@@ -443,7 +439,7 @@ export default function Products() {
                             Cost
                           </p>
                           <p className="text-sm font-semibold text-muted-foreground">
-                            {cost.toLocaleString()} MKD
+                            {cost.toLocaleString("en-US")} MKD
                           </p>
                         </div>
                       </div>
@@ -480,7 +476,6 @@ export default function Products() {
           setDialogOpen(open);
           if (!open) {
             setEditingId(null);
-            setSelectedDescription("");
           }
         }}
       >
@@ -500,7 +495,6 @@ export default function Products() {
                 value={form.category}
                 onValueChange={(v) => {
                   setForm((f) => ({ ...f, category: v as ProductCategory }));
-                  setSelectedDescription("");
                 }}
               >
                 <SelectTrigger data-ocid="products.category.select">
@@ -515,58 +509,6 @@ export default function Products() {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Pick from existing descriptions in this category */}
-            {!isEditing &&
-              products.filter((p) => normaliseCat(p.category) === form.category)
-                .length > 0 && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-                    Pick from existing descriptions
-                  </Label>
-                  <Select
-                    value={selectedDescription || "__none__"}
-                    onValueChange={(v) => {
-                      setSelectedDescription(v === "__none__" ? "" : v);
-                      if (v && v !== "__none__") {
-                        const found = products.find(
-                          (p) =>
-                            p.name === v &&
-                            normaliseCat(p.category) === form.category,
-                        );
-                        if (found) {
-                          setForm((f) => ({
-                            ...f,
-                            name: found.name,
-                            basePrice: String(found.basePrice),
-                            costPrice: String(found.costPrice),
-                          }));
-                        }
-                      }
-                    }}
-                  >
-                    <SelectTrigger data-ocid="products.existing_description.select">
-                      <SelectValue placeholder="Select existing or type new below..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">
-                        — Type new description below —
-                      </SelectItem>
-                      {products
-                        .filter(
-                          (p) => normaliseCat(p.category) === form.category,
-                        )
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((p) => (
-                          <SelectItem key={String(p.id)} value={p.name}>
-                            {p.name} — {Number(p.basePrice).toLocaleString()}{" "}
-                            MKD
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
             <div className="space-y-1.5">
               <Label htmlFor="product-name">Product Name / Description</Label>
@@ -627,7 +569,6 @@ export default function Products() {
               onClick={() => {
                 setDialogOpen(false);
                 setEditingId(null);
-                setSelectedDescription("");
               }}
               disabled={isPending}
             >
