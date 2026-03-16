@@ -37,6 +37,7 @@ export function useGetAllProducts() {
     enabled: !!actor && !isFetching,
     staleTime: 0,
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 

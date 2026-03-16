@@ -22,11 +22,7 @@ import {
   useGetAllProducts,
   useUpdateOrder,
 } from "../hooks/useQueries";
-import {
-  HIDDEN_PRODUCTS_KEY,
-  getHiddenIds,
-  normaliseCat,
-} from "../pages/Products";
+import { normaliseCat } from "../pages/Products";
 
 // Category display order — handles both legacy singular and new plural names
 const CATEGORY_ORDER = [
@@ -129,7 +125,7 @@ function ProductCombobox({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Bug fix: removed .slice(0, 50) cap — show ALL products when no query is typed
+  // Show ALL products when no query is typed
   const suggestions = useMemo(() => {
     if (!inputValue.trim()) return products;
     const q = inputValue.toLowerCase();
@@ -253,34 +249,8 @@ export default function OrderForm({
   const { data: allProducts = [] } = useGetAllProducts();
   const isEditing = !!editOrder;
 
-  // Reactive hidden IDs — updates when products are deleted anywhere in the app
-  const [hiddenIds, setHiddenIds] = useState<string[]>(getHiddenIds);
-
-  useEffect(() => {
-    const handler = () => setHiddenIds(getHiddenIds());
-    window.addEventListener("truffleur-products-updated", handler);
-    return () =>
-      window.removeEventListener("truffleur-products-updated", handler);
-  }, []);
-
-  // Bug fix: clean up stale hidden IDs that no longer match any product in backend
-  useEffect(() => {
-    if (allProducts.length === 0) return;
-    const validIds = new Set(allProducts.map((p) => String(p.id)));
-    const currentHidden = getHiddenIds();
-    const cleaned = currentHidden.filter((id) => validIds.has(id));
-    if (cleaned.length !== currentHidden.length) {
-      localStorage.setItem(HIDDEN_PRODUCTS_KEY, JSON.stringify(cleaned));
-      setHiddenIds(cleaned);
-      window.dispatchEvent(new CustomEvent("truffleur-products-updated"));
-    }
-  }, [allProducts]);
-
-  // Filter hidden products — memoised to avoid infinite re-render loop
-  const products = useMemo(
-    () => allProducts.filter((p) => !hiddenIds.includes(String(p.id))),
-    [allProducts, hiddenIds],
-  );
+  // All products shown directly — no localStorage hidden-ID filtering
+  const products = allProducts;
 
   const getInitialClientName = () => editOrder?.clientName ?? defaultClientName;
   const isExistingClient = (name: string) =>
@@ -293,9 +263,9 @@ export default function OrderForm({
     parseProductRows(editOrder?.productName ?? ""),
   );
 
-  // Reset product rows when a product is deleted
+  // Reset product rows when a product is deleted from backend
   useEffect(() => {
-    const validNames = new Set(products.map((p) => p.name));
+    const validNames = new Set(allProducts.map((p) => p.name));
     setProductRows((prev) => {
       let changed = false;
       const next = prev.map((row) => {
@@ -308,7 +278,7 @@ export default function OrderForm({
       });
       return changed ? next : prev;
     });
-  }, [products]);
+  }, [allProducts]);
 
   const [form, setForm] = useState({
     clientName: getInitialClientName(),
