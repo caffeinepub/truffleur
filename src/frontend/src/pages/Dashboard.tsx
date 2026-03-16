@@ -175,32 +175,46 @@ export default function Dashboard() {
         >
           {/* Top overlay row: logo image left, date right */}
           <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-5 pt-4 pointer-events-none">
-            {/* Logo image — top left, small, no background */}
-            <img
-              src="/assets/uploads/att.KUB7gyQDFib3dqzTfOpT5myxSD_GYh1blowOo8AVQ2A-1.jpeg"
-              alt="Truffleur"
+            {/* Logo — gold calligraphic text matching truffle box */}
+            <div
               style={{
-                height: "44px",
-                width: "auto",
-                objectFit: "contain",
-                borderRadius: "4px",
+                background: "rgba(30, 60, 35, 0.52)",
+                borderRadius: "8px",
+                padding: "4px 10px",
+                backdropFilter: "blur(3px)",
+                display: "flex",
+                alignItems: "center",
               }}
-            />
+            >
+              <img
+                src="/assets/generated/truffleur-box-logo-transparent.dim_400x120.png"
+                alt="Truffleur"
+                style={{
+                  height: "34px",
+                  width: "auto",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))",
+                }}
+              />
+            </div>
 
-            {/* Date — top right, same style as View Products */}
+            {/* Date — top right, bold and clearly visible */}
             <span
               style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
-                fontWeight: 300,
+                fontWeight: 600,
                 fontStyle: "italic",
-                fontSize: "clamp(0.65rem, 1.8vw, 0.85rem)",
-                letterSpacing: "0.08em",
-                color: "rgba(255, 252, 230, 0.97)",
+                fontSize: "clamp(0.7rem, 2vw, 0.95rem)",
+                letterSpacing: "0.06em",
+                color: "#ffffff",
                 textShadow:
-                  "0 1px 8px rgba(0,0,0,0.7), 0 0px 3px rgba(0,0,0,0.6)",
+                  "0 1px 12px rgba(0,0,0,0.9), 0 0px 4px rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.7)",
                 textAlign: "right",
                 lineHeight: 1.3,
                 whiteSpace: "nowrap",
+                background: "rgba(0,0,0,0.18)",
+                borderRadius: "6px",
+                padding: "3px 8px",
               }}
             >
               {new Date().toLocaleDateString("en-GB", {

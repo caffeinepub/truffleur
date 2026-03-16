@@ -12,7 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Client, Order } from "../backend.d";
 import {
@@ -22,6 +22,24 @@ import {
   useGetAllProducts,
   useUpdateOrder,
 } from "../hooks/useQueries";
+import { getHiddenIds, normaliseCat } from "../pages/Products";
+
+// Category display order — handles both legacy singular and new plural names
+const CATEGORY_ORDER = [
+  "Truffles",
+  "Truffle",
+  "Flowers",
+  "Flower",
+  "Madeleines",
+  "Madeleine",
+  "Cake Pops",
+  "Cake Pop",
+  "Macarons",
+  "Oreshki",
+  "NYC Cookies",
+  "Cakesicles",
+  "Other",
+];
 
 let rowIdCounter = 0;
 
@@ -29,10 +47,11 @@ interface ProductRow {
   id: number;
   productName: string;
   quantity: string;
+  unitPrice: number;
 }
 
-function makeRow(productName = "", quantity = "1"): ProductRow {
-  return { id: ++rowIdCounter, productName, quantity };
+function makeRow(productName = "", quantity = "1", unitPrice = 0): ProductRow {
+  return { id: ++rowIdCounter, productName, quantity, unitPrice };
 }
 
 function parseProductRows(raw: string): ProductRow[] {
@@ -71,9 +90,24 @@ export default function OrderForm({
   const addClient = useAddClient();
   const queryClient = useQueryClient();
   const { data: clients = [] } = useGetAllClients();
-  // Always fetch live products from backend — auto-updates when new products are added
-  const { data: products = [] } = useGetAllProducts();
+  const { data: allProducts = [] } = useGetAllProducts();
   const isEditing = !!editOrder;
+
+  // Reactive hidden IDs — updates when products are deleted anywhere in the app
+  const [hiddenIds, setHiddenIds] = useState<string[]>(getHiddenIds);
+
+  useEffect(() => {
+    const handler = () => setHiddenIds(getHiddenIds());
+    window.addEventListener("truffleur-products-updated", handler);
+    return () =>
+      window.removeEventListener("truffleur-products-updated", handler);
+  }, []);
+
+  // Filter hidden products — memoised to avoid infinite re-render loop
+  const products = useMemo(
+    () => allProducts.filter((p) => !hiddenIds.includes(String(p.id))),
+    [allProducts, hiddenIds],
+  );
 
   const getInitialClientName = () => editOrder?.clientName ?? defaultClientName;
   const isExistingClient = (name: string) =>
@@ -86,6 +120,19 @@ export default function OrderForm({
     parseProductRows(editOrder?.productName ?? ""),
   );
 
+  // Reset product rows when a product is deleted — clear the row so it shows placeholder
+  useEffect(() => {
+    const validNames = new Set(products.map((p) => p.name));
+    setProductRows((prev) =>
+      prev.map((row) => {
+        if (!row.productName) return row;
+        if (!validNames.has(row.productName))
+          return { ...row, productName: "", unitPrice: 0 };
+        return row;
+      }),
+    );
+  }, [products]);
+
   const [form, setForm] = useState({
     clientName: getInitialClientName(),
     occasion: editOrder?.occasion ?? "",
@@ -94,11 +141,13 @@ export default function OrderForm({
       ? ""
       : (editOrder?.deliveryAddress ?? ""),
     isPickup: editOrder?.isPickup ?? false,
-    price: editOrder ? String(editOrder.price) : "",
-    deposit: editOrder ? String(editOrder.deposit) : "",
     status: editOrder?.status ?? "New",
     notes: editOrder?.notes ?? "",
   });
+
+  // Price: auto-calculated from products but manually editable
+  const [priceManual, setPriceManual] = useState<string>("");
+  const [priceEdited, setPriceEdited] = useState(false);
 
   const [useNewClient, setUseNewClient] = useState(() => {
     const name = getInitialClientName();
@@ -110,8 +159,44 @@ export default function OrderForm({
     ? updateOrder.isPending
     : addOrder.isPending || addClient.isPending;
 
+  // Products sorted by CATEGORY_ORDER (handles both plural & legacy names), then by name
+  const sortedUniqueProducts = useMemo(() => {
+    const seen = new Set<string>();
+    return [...products]
+      .sort((a, b) => {
+        const catA = CATEGORY_ORDER.indexOf(a.category);
+        const catB = CATEGORY_ORDER.indexOf(b.category);
+        const catDiff = (catA === -1 ? 99 : catA) - (catB === -1 ? 99 : catB);
+        if (catDiff !== 0) return catDiff;
+        return a.name.localeCompare(b.name);
+      })
+      .filter((p) => {
+        const key = p.name.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }, [products]);
+
+  // Computed total from product rows
+  const computedTotal = useMemo(() => {
+    return productRows.reduce((sum, row) => {
+      const qty = Number.parseInt(row.quantity) || 1;
+      return sum + row.unitPrice * qty;
+    }, 0);
+  }, [productRows]);
+
+  // Auto-fill price from products unless user has manually edited it
+  useEffect(() => {
+    if (!priceEdited) {
+      setPriceManual(computedTotal > 0 ? String(computedTotal) : "");
+    }
+  }, [computedTotal, priceEdited]);
+
+  // Effective price used when saving
+  const effectivePrice = priceEdited ? Number(priceManual) || 0 : computedTotal;
+
   const addProductRow = () => {
-    if (productRows.length >= 5) return;
     setProductRows((prev) => [...prev, makeRow()]);
   };
 
@@ -122,36 +207,21 @@ export default function OrderForm({
   const updateProductRow = (
     id: number,
     key: keyof Omit<ProductRow, "id">,
-    val: string,
+    val: string | number,
   ) => {
     setProductRows((prev) =>
       prev.map((row) => (row.id === id ? { ...row, [key]: val } : row)),
     );
   };
 
-  const sortedUniqueProducts = useMemo(() => {
-    const seen = new Set<string>();
-    return [...products]
-      .sort(
-        (a, b) =>
-          a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
-      )
-      .filter((p) => {
-        const key = p.name.toLowerCase().trim();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-  }, [products]);
-
   const handleProductSelect = (rowId: number, productName: string) => {
-    updateProductRow(rowId, "productName", productName);
-    if (productRows.length === 1) {
-      const found = products.find((p) => p.name === productName);
-      if (found && !form.price) {
-        setForm((prev) => ({ ...prev, price: String(found.basePrice) }));
-      }
-    }
+    const found = products.find((p) => p.name === productName);
+    const unitPrice = found ? Number(found.basePrice) : 0;
+    setProductRows((prev) =>
+      prev.map((row) =>
+        row.id === rowId ? { ...row, productName, unitPrice } : row,
+      ),
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,8 +245,8 @@ export default function OrderForm({
           deliveryDate: form.deliveryDate,
           deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
           isPickup: form.isPickup,
-          price: BigInt(form.price || "0"),
-          deposit: BigInt(form.deposit || "0"),
+          price: BigInt(effectivePrice),
+          deposit: BigInt(0),
           status: form.status,
           notes: form.notes,
         });
@@ -221,8 +291,8 @@ export default function OrderForm({
           deliveryDate: form.deliveryDate,
           deliveryAddress: form.isPickup ? "Pickup" : form.deliveryAddress,
           isPickup: form.isPickup,
-          price: BigInt(form.price || "0"),
-          deposit: BigInt(form.deposit || "0"),
+          price: BigInt(effectivePrice),
+          deposit: BigInt(0),
           status: form.status,
           notes: form.notes,
         });
@@ -241,7 +311,7 @@ export default function OrderForm({
   });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* Client field */}
       {!useNewClient ? (
         <div className="space-y-1.5">
@@ -302,89 +372,102 @@ export default function OrderForm({
         </div>
       )}
 
-      {/* Product rows — live from backend, scrollable dropdown */}
+      {/* Product rows — unlimited, live from backend, sorted by category order */}
       <div className="space-y-2">
         <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
           Products
         </Label>
-        {productRows.map((row, idx) => (
-          <div key={row.id} className="flex gap-2 items-center">
-            <div className="flex-1">
-              {products.length > 0 ? (
-                <Select
-                  value={row.productName}
-                  onValueChange={(v) => handleProductSelect(row.id, v)}
-                >
-                  <SelectTrigger
-                    data-ocid={`order_form.product_row.select.${idx + 1}`}
+        {productRows.map((row, idx) => {
+          const qty = Number.parseInt(row.quantity) || 1;
+          const subtotal = row.unitPrice * qty;
+          return (
+            <div key={row.id} className="space-y-1">
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  {products.length > 0 ? (
+                    <Select
+                      value={row.productName}
+                      onValueChange={(v) => handleProductSelect(row.id, v)}
+                    >
+                      <SelectTrigger
+                        data-ocid={`order_form.product_row.select.${idx + 1}`}
+                      >
+                        <SelectValue placeholder="Select a product..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64 overflow-y-auto">
+                        {sortedUniqueProducts.map((p) => (
+                          <SelectItem key={String(p.id)} value={p.name}>
+                            <span className="text-xs text-muted-foreground mr-1.5">
+                              [{normaliseCat(p.category)}]
+                            </span>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      data-ocid={`order_form.product_row.select.${idx + 1}`}
+                      placeholder="Product name (add products in catalogue first)"
+                      value={row.productName}
+                      onChange={(e) =>
+                        updateProductRow(row.id, "productName", e.target.value)
+                      }
+                    />
+                  )}
+                </div>
+                <div className="w-20">
+                  <Input
+                    data-ocid={`order_form.product_row.qty.${idx + 1}`}
+                    type="number"
+                    min="1"
+                    placeholder="1"
+                    value={row.quantity}
+                    onChange={(e) =>
+                      updateProductRow(row.id, "quantity", e.target.value)
+                    }
+                  />
+                </div>
+                {productRows.length > 1 && (
+                  <button
+                    type="button"
+                    data-ocid={`order_form.product_row.remove_button.${idx + 1}`}
+                    onClick={() => removeProductRow(row.id)}
+                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                    aria-label="Remove product row"
                   >
-                    <SelectValue placeholder="Select a product..." />
-                  </SelectTrigger>
-                  {/* max-h + overflow ensures scrollability for long product lists */}
-                  <SelectContent className="max-h-56 overflow-y-auto">
-                    {sortedUniqueProducts.map((p) => (
-                      <SelectItem key={String(p.id)} value={p.name}>
-                        <span className="text-xs text-muted-foreground mr-1.5">
-                          [{p.category}]
-                        </span>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  data-ocid={`order_form.product_row.select.${idx + 1}`}
-                  placeholder="Product name (add products in catalogue first)"
-                  value={row.productName}
-                  onChange={(e) =>
-                    updateProductRow(row.id, "productName", e.target.value)
-                  }
-                />
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              {row.productName && row.unitPrice > 0 && (
+                <div className="text-right pr-1">
+                  <span className="text-xs text-muted-foreground">
+                    {row.unitPrice.toLocaleString()} × {qty} ={" "}
+                    <span className="font-semibold text-foreground">
+                      {subtotal.toLocaleString()} MKD
+                    </span>
+                  </span>
+                </div>
               )}
             </div>
-            <div className="w-20">
-              <Input
-                data-ocid={`order_form.product_row.qty.${idx + 1}`}
-                type="number"
-                min="1"
-                placeholder="1"
-                value={row.quantity}
-                onChange={(e) =>
-                  updateProductRow(row.id, "quantity", e.target.value)
-                }
-              />
-            </div>
-            {productRows.length > 1 && (
-              <button
-                type="button"
-                data-ocid={`order_form.product_row.remove_button.${idx + 1}`}
-                onClick={() => removeProductRow(row.id)}
-                className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                aria-label="Remove product row"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        ))}
-        {productRows.length < 5 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            data-ocid="order_form.add_product_row.button"
-            onClick={addProductRow}
-            className="w-full mt-1 border-dashed text-muted-foreground hover:text-foreground"
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Add product
-          </Button>
-        )}
+          );
+        })}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          data-ocid="order_form.add_product_row.button"
+          onClick={addProductRow}
+          className="w-full mt-1 border-dashed text-muted-foreground hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          Add product
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Occasion dropdown */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Occasion */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Occasion
@@ -414,6 +497,7 @@ export default function OrderForm({
             </SelectContent>
           </Select>
         </div>
+        {/* Date & Time */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Date &amp; Time
@@ -426,6 +510,7 @@ export default function OrderForm({
         </div>
       </div>
 
+      {/* Delivery Address */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
@@ -454,7 +539,8 @@ export default function OrderForm({
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Price (MKD) — editable, auto-filled from products */}
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
             Price (MKD)
@@ -463,45 +549,49 @@ export default function OrderForm({
             data-ocid="order_form.price.input"
             type="number"
             min="0"
-            placeholder="1850"
-            required
-            {...field("price")}
+            placeholder="Auto from products"
+            value={priceManual}
+            onChange={(e) => {
+              setPriceManual(e.target.value);
+              setPriceEdited(true);
+            }}
           />
+          {computedTotal > 0 && priceEdited && (
+            <button
+              type="button"
+              className="text-[10px] text-primary underline"
+              onClick={() => {
+                setPriceEdited(false);
+                setPriceManual(String(computedTotal));
+              }}
+            >
+              Reset to auto ({computedTotal.toLocaleString()} MKD)
+            </button>
+          )}
         </div>
+        {/* Status */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Deposit (MKD)
+            Status
           </Label>
-          <Input
-            type="number"
-            min="0"
-            placeholder="500"
-            {...field("deposit")}
-          />
+          <Select
+            value={form.status}
+            onValueChange={(v) => setForm((prev) => ({ ...prev, status: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {["New", "In Progress", "Ready", "Delivered", "Cancelled"].map(
+                (s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ),
+              )}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-          Status
-        </Label>
-        <Select
-          value={form.status}
-          onValueChange={(v) => setForm((prev) => ({ ...prev, status: v }))}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {["New", "In Progress", "Ready", "Delivered", "Cancelled"].map(
-              (s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ),
-            )}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="space-y-1.5">
@@ -510,7 +600,7 @@ export default function OrderForm({
         </Label>
         <Textarea
           placeholder="Special requests, card message..."
-          rows={3}
+          rows={2}
           {...field("notes")}
         />
       </div>

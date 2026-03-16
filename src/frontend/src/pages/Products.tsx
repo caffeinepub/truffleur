@@ -23,6 +23,7 @@ import {
   useUpdateProduct,
 } from "@/hooks/useQueries";
 import {
+  Download,
   Edit2,
   LayoutGrid,
   PackagePlus,
@@ -32,51 +33,71 @@ import {
 import { useState } from "react";
 
 type ProductCategory =
-  | "Truffle"
+  | "Truffles"
   | "Flowers"
-  | "Madeleine"
-  | "Cake Pop"
+  | "Madeleines"
+  | "Cake Pops"
   | "Macarons"
   | "Oreshki"
   | "NYC Cookies"
+  | "Cakesicles"
   | "Other";
 
 const CATEGORIES: ProductCategory[] = [
-  "Truffle",
+  "Truffles",
   "Flowers",
-  "Madeleine",
-  "Cake Pop",
+  "Madeleines",
+  "Cake Pops",
   "Macarons",
   "Oreshki",
   "NYC Cookies",
+  "Cakesicles",
   "Other",
 ];
 
+// Normalise old singular category names stored in backend -> plural display names
+const CATEGORY_NORMALISE: Record<string, string> = {
+  Truffle: "Truffles",
+  Flower: "Flowers",
+  Madeleine: "Madeleines",
+  "Cake Pop": "Cake Pops",
+};
+
+export function normaliseCat(cat: string): string {
+  return CATEGORY_NORMALISE[cat] ?? cat;
+}
+
 const CATEGORY_COLORS: Record<string, string> = {
-  Truffle: "bg-chart-1/10 text-chart-1 border-chart-1/20",
+  // Plural (new)
+  Truffles: "bg-chart-1/10 text-chart-1 border-chart-1/20",
   Flowers: "bg-pink-50 text-pink-700 border-pink-100",
-  Madeleine: "bg-chart-2/10 text-chart-2 border-chart-2/20",
-  "Cake Pop": "bg-chart-5/10 text-chart-5 border-chart-5/20",
+  Madeleines: "bg-chart-2/10 text-chart-2 border-chart-2/20",
+  "Cake Pops": "bg-chart-5/10 text-chart-5 border-chart-5/20",
   Macarons: "bg-chart-3/10 text-chart-3 border-chart-3/20",
   Oreshki: "bg-chart-4/10 text-chart-4 border-chart-4/20",
   "NYC Cookies": "bg-primary/10 text-primary border-primary/20",
+  Cakesicles: "bg-rose-50 text-rose-600 border-rose-100",
   Other: "bg-muted/30 text-muted-foreground border-muted/40",
-  // Legacy support
-  Truffles: "bg-chart-1/10 text-chart-1 border-chart-1/20",
+  // Legacy singular (backward compat)
+  Truffle: "bg-chart-1/10 text-chart-1 border-chart-1/20",
+  Flower: "bg-pink-50 text-pink-700 border-pink-100",
+  Madeleine: "bg-chart-2/10 text-chart-2 border-chart-2/20",
+  "Cake Pop": "bg-chart-5/10 text-chart-5 border-chart-5/20",
+  // More legacy
   "Gift Boxes": "bg-chart-5/10 text-chart-5 border-chart-5/20",
   Seasonal: "bg-chart-3/10 text-chart-3 border-chart-3/20",
 };
 
 const EMPTY_FORM = {
   name: "",
-  category: "Truffle" as ProductCategory,
+  category: "Truffles" as ProductCategory,
   basePrice: "",
   costPrice: "",
 };
 
-const HIDDEN_PRODUCTS_KEY = "truffleur_hidden_products";
+export const HIDDEN_PRODUCTS_KEY = "truffleur_hidden_products";
 
-function getHiddenIds(): string[] {
+export function getHiddenIds(): string[] {
   try {
     return JSON.parse(localStorage.getItem(HIDDEN_PRODUCTS_KEY) ?? "[]");
   } catch {
@@ -89,6 +110,51 @@ function addHiddenId(id: string) {
   if (!ids.includes(id)) {
     localStorage.setItem(HIDDEN_PRODUCTS_KEY, JSON.stringify([...ids, id]));
   }
+}
+
+function exportProductsCSV(
+  products: Array<{
+    id: bigint;
+    name: string;
+    category: string;
+    basePrice: bigint;
+    costPrice: bigint;
+  }>,
+) {
+  const headers = [
+    "Category",
+    "Product Name",
+    "Price (MKD)",
+    "Cost (MKD)",
+    "Margin (%)",
+  ];
+  const csvEscape = (val: string | number) =>
+    `"${String(val).replace(/"/g, '""')}"`;
+  const rows = products.map((p) => {
+    const price = Number(p.basePrice);
+    const cost = Number(p.costPrice);
+    const margin =
+      price > 0 ? (((price - cost) / price) * 100).toFixed(1) : "0.0";
+    return [
+      csvEscape(normaliseCat(p.category)),
+      csvEscape(p.name),
+      csvEscape(price),
+      csvEscape(cost),
+      csvEscape(margin),
+    ];
+  });
+  const csv = [
+    headers.map((h) => `"${h}"`).join(","),
+    ...rows.map((r) => r.join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const date = new Date().toISOString().slice(0, 10);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `truffleur-products-${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function Products() {
@@ -143,7 +209,7 @@ export default function Products() {
     setSelectedDescription("");
     setForm({
       name: product.name,
-      category: product.category as ProductCategory,
+      category: normaliseCat(product.category) as ProductCategory,
       basePrice: String(product.basePrice),
       costPrice: String(product.costPrice),
     });
@@ -177,15 +243,28 @@ export default function Products() {
     addHiddenId(id);
     setHiddenIds(getHiddenIds());
     setDeleteConfirmId(null);
+    window.dispatchEvent(new CustomEvent("truffleur-products-updated"));
   }
 
   const isPending = addProduct.isPending || updateProduct.isPending;
 
-  // Group products by category for display
-  const grouped = CATEGORIES.map((cat) => ({
-    category: cat,
+  // Group products by normalised category for display
+  const DISPLAY_ORDER = [
+    "Truffles",
+    "Flowers",
+    "Madeleines",
+    "Cake Pops",
+    "Macarons",
+    "Oreshki",
+    "NYC Cookies",
+    "Cakesicles",
+    "Other",
+  ];
+
+  const grouped = DISPLAY_ORDER.map((displayCat) => ({
+    category: displayCat,
     items: products
-      .filter((p) => p.category === cat)
+      .filter((p) => normaliseCat(p.category) === displayCat)
       .sort((a, b) => a.name.localeCompare(b.name)),
   })).filter((g) => g.items.length > 0);
 
@@ -201,14 +280,26 @@ export default function Products() {
             Products
           </h1>
         </div>
-        <Button
-          data-ocid="products.add_product.button"
-          className="gap-2"
-          onClick={openAdd}
-        >
-          <PackagePlus className="w-4 h-4" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            data-ocid="products.export_csv.button"
+            variant="outline"
+            className="gap-2"
+            disabled={products.length === 0}
+            onClick={() => exportProductsCSV(products)}
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+          <Button
+            data-ocid="products.add_product.button"
+            className="gap-2"
+            onClick={openAdd}
+          >
+            <PackagePlus className="w-4 h-4" />
+            Add Product
+          </Button>
+        </div>
       </header>
 
       {/* Summary stats */}
@@ -255,7 +346,7 @@ export default function Products() {
         </Card>
       </div>
 
-      {/* Product list — loading */}
+      {/* Product list */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -308,9 +399,9 @@ export default function Products() {
                       <div className="flex items-start justify-between mb-3">
                         <Badge
                           variant="outline"
-                          className={`text-xs ${CATEGORY_COLORS[product.category] ?? ""}`}
+                          className={`text-xs ${CATEGORY_COLORS[normaliseCat(product.category)] ?? ""}`}
                         >
-                          {product.category}
+                          {normaliseCat(product.category)}
                         </Badge>
                         <div className="flex items-center gap-1">
                           <button
@@ -427,8 +518,8 @@ export default function Products() {
 
             {/* Pick from existing descriptions in this category */}
             {!isEditing &&
-              products.filter((p) => p.category === form.category).length >
-                0 && (
+              products.filter((p) => normaliseCat(p.category) === form.category)
+                .length > 0 && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                     Pick from existing descriptions
@@ -439,7 +530,9 @@ export default function Products() {
                       setSelectedDescription(v === "__none__" ? "" : v);
                       if (v && v !== "__none__") {
                         const found = products.find(
-                          (p) => p.name === v && p.category === form.category,
+                          (p) =>
+                            p.name === v &&
+                            normaliseCat(p.category) === form.category,
                         );
                         if (found) {
                           setForm((f) => ({
@@ -460,7 +553,9 @@ export default function Products() {
                         — Type new description below —
                       </SelectItem>
                       {products
-                        .filter((p) => p.category === form.category)
+                        .filter(
+                          (p) => normaliseCat(p.category) === form.category,
+                        )
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((p) => (
                           <SelectItem key={String(p.id)} value={p.name}>

@@ -27,6 +27,9 @@ const HISTORY_STATUSES = ["Delivered", "Cancelled"];
 
 const FILTER_STATUSES = ["All", "New", "In Progress", "Ready"];
 
+// Cancelled orders are hidden from history view after 3 days
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
 function exportOrdersToCSV(orders: Order[]) {
   const headers = [
     "Order #",
@@ -179,15 +182,25 @@ export default function Orders() {
     return a.deliveryDate.localeCompare(b.deliveryDate);
   });
 
-  // Sort history: Delivered first, Cancelled last; within each group by date descending
-  const sortedHistory = [...historyOrders].sort((a, b) => {
-    if (a.status === "Cancelled" && b.status !== "Cancelled") return 1;
-    if (b.status === "Cancelled" && a.status !== "Cancelled") return -1;
-    if (!a.deliveryDate && !b.deliveryDate) return 0;
-    if (!a.deliveryDate) return 1;
-    if (!b.deliveryDate) return -1;
-    return b.deliveryDate.localeCompare(a.deliveryDate);
-  });
+  const now = Date.now();
+
+  // Sort history: Delivered first, Cancelled last.
+  // Cancelled orders older than 3 days are hidden from the list view
+  // (data still kept for reports — no backend deletion).
+  const sortedHistory = [...historyOrders]
+    .filter((o) => {
+      if (o.status !== "Cancelled") return true;
+      const ts = Number(o.createdAt) / 1_000_000;
+      return now - ts <= THREE_DAYS_MS;
+    })
+    .sort((a, b) => {
+      if (a.status === "Cancelled" && b.status !== "Cancelled") return 1;
+      if (b.status === "Cancelled" && a.status !== "Cancelled") return -1;
+      if (!a.deliveryDate && !b.deliveryDate) return 0;
+      if (!a.deliveryDate) return 1;
+      if (!b.deliveryDate) return -1;
+      return b.deliveryDate.localeCompare(a.deliveryDate);
+    });
 
   const filteredActive =
     status === "All"

@@ -67,6 +67,22 @@ const barChartConfig: ChartConfig = {
   },
 };
 
+// Parse product rows from encoded string like "Product A x2, Product B x1"
+function parseProductEntries(
+  productName: string,
+): Array<{ name: string; qty: number }> {
+  if (!productName?.trim()) return [];
+  return productName
+    .split(", ")
+    .map((part) => {
+      const match = part.match(/^(.+) x(\d+)$/);
+      if (match)
+        return { name: match[1].trim(), qty: Number.parseInt(match[2]) };
+      return { name: part.trim(), qty: 1 };
+    })
+    .filter((e) => e.name);
+}
+
 function orderInPeriod(o: Order, period: string): boolean {
   if (period === "all") return true;
   const ts = Number(o.createdAt) / 1_000_000;
@@ -102,34 +118,38 @@ export default function Reports() {
     "today" | "week" | "month" | "quarter" | "all"
   >("all");
 
+  // Orders filtered by period — used for summary stats, clients, products tables
   const filteredOrders = useMemo(
     () => orders.filter((o) => orderInPeriod(o, period)),
     [orders, period],
   );
 
-  // Monthly revenue for last 6 months
+  // Monthly revenue chart always shows last 6 months of ALL delivered orders
+  // (independent of period filter — so it doesn't go blank when viewing "This Week")
   const monthlyRevenue = useMemo(() => {
     const now = new Date();
     const result: { month: string; revenue: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const revenue = filteredOrders
+      const revenue = orders
         .filter((o) => {
-          const ts = Number(o.createdAt) / 1_000_000;
-          const od = new Date(ts);
+          if (o.status !== "Delivered") return false;
+          // Use deliveryDate for monthly grouping (more accurate than createdAt)
+          const dateStr = o.deliveryDate || "";
+          if (!dateStr) return false;
+          const od = new Date(dateStr);
           return (
             od.getFullYear() === d.getFullYear() &&
-            od.getMonth() === d.getMonth() &&
-            o.status === "Delivered"
+            od.getMonth() === d.getMonth()
           );
         })
         .reduce((s, o) => s + Number(o.price), 0);
       result.push({ month: MONTH_LABELS[d.getMonth()], revenue });
     }
     return result;
-  }, [filteredOrders]);
+  }, [orders]);
 
-  // Order status distribution
+  // Order status distribution — based on filtered orders
   const statusDistribution = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const o of filteredOrders) {
@@ -138,12 +158,12 @@ export default function Reports() {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [filteredOrders]);
 
-  // Top 5 clients
+  // Top 5 clients — based on filtered orders, by total revenue
   const topClients = useMemo(() => {
     const map: Record<string, { name: string; count: number; total: number }> =
       {};
     for (const o of filteredOrders) {
-      const key = String(o.clientId);
+      const key = o.clientName.toLowerCase().trim();
       if (!map[key]) map[key] = { name: o.clientName, count: 0, total: 0 };
       map[key].count++;
       map[key].total += Number(o.price);
@@ -153,15 +173,26 @@ export default function Reports() {
       .slice(0, 5);
   }, [filteredOrders]);
 
-  // Best-selling products
+  // Best-selling products — parse multi-product order strings correctly
   const bestProducts = useMemo(() => {
-    const map: Record<string, { name: string; count: number; total: number }> =
-      {};
+    const map: Record<
+      string,
+      { name: string; count: number; revenue: number }
+    > = {};
     for (const o of filteredOrders) {
-      const key = o.productName;
-      if (!map[key]) map[key] = { name: key, count: 0, total: 0 };
-      map[key].count += Number(o.quantity);
-      map[key].total += Number(o.price);
+      const entries = parseProductEntries(o.productName);
+      if (entries.length === 0) continue;
+      // Distribute revenue proportionally if multiple products
+      const totalQty = entries.reduce((s, e) => s + e.qty, 0);
+      for (const entry of entries) {
+        const key = entry.name.toLowerCase();
+        if (!map[key]) map[key] = { name: entry.name, count: 0, revenue: 0 };
+        map[key].count += entry.qty;
+        // Allocate revenue proportionally by quantity share
+        map[key].revenue += Math.round(
+          (Number(o.price) * entry.qty) / totalQty,
+        );
+      }
     }
     return Object.values(map)
       .sort((a, b) => b.count - a.count)
@@ -176,8 +207,9 @@ export default function Reports() {
       ? filteredOrders.reduce((s, o) => s + Number(o.price), 0) /
         filteredOrders.length
       : 0;
-  const activeClients = new Set(filteredOrders.map((o) => String(o.clientId)))
-    .size;
+  const activeClients = new Set(
+    filteredOrders.map((o) => o.clientName.toLowerCase().trim()),
+  ).size;
 
   function exportReportCSV() {
     const lines: string[] = [];
@@ -205,9 +237,15 @@ export default function Reports() {
     lines.push('"Rank","Product","Qty Sold","Revenue (MKD)"');
     bestProducts.forEach((p, i) => {
       lines.push(
-        `"${i + 1}","${p.name}","${p.count}","${p.total.toLocaleString()}"`,
+        `"${i + 1}","${p.name}","${p.count}","${p.revenue.toLocaleString()}"`,
       );
     });
+    lines.push("");
+    lines.push('"Monthly Revenue (last 6 months)"');
+    lines.push('"Month","Revenue (MKD)"');
+    for (const m of monthlyRevenue) {
+      lines.push(`"${m.month}","${m.revenue.toLocaleString()}"`);
+    }
 
     const csv = lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -333,14 +371,14 @@ export default function Reports() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {/* Bar chart: monthly revenue */}
+        {/* Bar chart: monthly revenue — always all-time, last 6 months */}
         <Card className="md:col-span-2 shadow-card border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="font-display text-base font-medium text-foreground">
               Monthly Revenue
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Delivered orders – last 6 months
+              Delivered orders – last 6 months (all time)
             </p>
           </CardHeader>
           <CardContent>
@@ -576,7 +614,7 @@ export default function Reports() {
                         {p.count}
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-foreground text-right pr-5">
-                        {p.total.toLocaleString()} MKD
+                        {p.revenue.toLocaleString()} MKD
                       </TableCell>
                     </TableRow>
                   ))}

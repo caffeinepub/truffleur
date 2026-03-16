@@ -35,6 +35,8 @@ export function useGetAllProducts() {
       return actor.getAllProducts();
     },
     enabled: !!actor && !isFetching,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 
@@ -219,7 +221,7 @@ export function useAddProduct() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.refetchQueries({ queryKey: ["products"] });
     },
   });
 }
@@ -245,7 +247,7 @@ export function useUpdateProduct() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.refetchQueries({ queryKey: ["products"] });
     },
   });
 }
