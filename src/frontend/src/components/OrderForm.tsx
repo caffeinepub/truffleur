@@ -22,7 +22,11 @@ import {
   useGetAllProducts,
   useUpdateOrder,
 } from "../hooks/useQueries";
-import { getHiddenIds } from "../pages/Products";
+import {
+  HIDDEN_PRODUCTS_KEY,
+  getHiddenIds,
+  normaliseCat,
+} from "../pages/Products";
 
 // Category display order — handles both legacy singular and new plural names
 const CATEGORY_ORDER = [
@@ -125,9 +129,9 @@ function ProductCombobox({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Filter by includes, case-insensitive, max 8 results shown initially but list is scrollable
+  // Bug fix: removed .slice(0, 50) cap — show ALL products when no query is typed
   const suggestions = useMemo(() => {
-    if (!inputValue.trim()) return products.slice(0, 50);
+    if (!inputValue.trim()) return products;
     const q = inputValue.toLowerCase();
     return products.filter(
       (p) =>
@@ -216,7 +220,7 @@ function ProductCombobox({
               onMouseDown={() => handleSelect(p.name)}
             >
               <span className="text-xs text-muted-foreground font-medium shrink-0">
-                {p.category}
+                {normaliseCat(p.category)}
               </span>
               <span className="text-muted-foreground/40 shrink-0">•</span>
               <span className="truncate">{p.name}</span>
@@ -258,6 +262,19 @@ export default function OrderForm({
     return () =>
       window.removeEventListener("truffleur-products-updated", handler);
   }, []);
+
+  // Bug fix: clean up stale hidden IDs that no longer match any product in backend
+  useEffect(() => {
+    if (allProducts.length === 0) return;
+    const validIds = new Set(allProducts.map((p) => String(p.id)));
+    const currentHidden = getHiddenIds();
+    const cleaned = currentHidden.filter((id) => validIds.has(id));
+    if (cleaned.length !== currentHidden.length) {
+      localStorage.setItem(HIDDEN_PRODUCTS_KEY, JSON.stringify(cleaned));
+      setHiddenIds(cleaned);
+      window.dispatchEvent(new CustomEvent("truffleur-products-updated"));
+    }
+  }, [allProducts]);
 
   // Filter hidden products — memoised to avoid infinite re-render loop
   const products = useMemo(
